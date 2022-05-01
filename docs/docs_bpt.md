@@ -30,10 +30,15 @@ Required:
 
   `Compare` 需要有重载 `operator()(const Key& lhs, const Key& rhs)`。
 
+- `Equal` class needs to have an overloaded
+  `operator()(const Key& lhs, const Key& rhs)`.
+
+  `Equal` 需要有重载 `operator()(const Key& lhs, const Key& rhs)`。
+
 ## Overview 概览
 
 ```c++
-template<class Key, class Value, class Compare>
+template<class Key, class Value, class Compare, class Equal>
 class BPTree {
 public:
     using Ptr = long;
@@ -97,7 +102,14 @@ private:
         long nodeSize; // the proper size making sure the block size is 4KiB
         Ptr head = -1;
         Ptr garbage = -1; // a single linked list to store the erased pair(s)
-    }
+
+        bool cached = false;
+        PairData cachedData; // cached data
+
+        // maybe some other cached stuff
+    };
+
+    Head head_;
 };
 ```
 ## Technical Details 技术细节
@@ -117,6 +129,10 @@ to a place dedicated for garbages (reserved for roll back operations).
 被移除的节点不应被真的删除，它们应当被移到专门放置移除节点的地方（为回滚操作预留）。（`Clear` 操作除外）
 
 ### Cache 快取 / 缓存
+
+The following cases may be cached.
+
+以下是需要被快取（缓存）的情形。
 
 - The node that have been queried just now, say `Contains()`.
 
