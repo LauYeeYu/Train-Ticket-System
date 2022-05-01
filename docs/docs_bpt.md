@@ -1,27 +1,54 @@
 # B Plus Tree for Train Ticket System
 
-此类为一个映射类，需要实现将 `Key` 映射到 `Value`，
+This is a mapping class on external storage, mapping every key to a value with a time stamp to make sure user can roll back to a certain time.
+
+此类为一个外部存储上的映射类，需要实现将 `key` 映射到 `value`，并保存对应的时间戳，确保可以按照时间戳回滚。
+
+Required:
 
 要求：
 
-- 维护一个键唯一的外部存储映射类；
+- To maintain a external-storage-based mapping class with unique keys;
 
-- 要求可以按照时间戳回滚；
+  维护一个键唯一的外部存储映射类；
 
-- `Key` 和 `Value` 需要有默认构造和拷贝构造；
+- The class is able to roll back to a certain time;
 
-- `Key` 和 `Value` 必须是平凡可复制、平凡可移动、平凡可析构的（所有数据必须存在类空间内部，并保证直接储存数据后读出的内容与之前的数据完全一致）；
+  要求可以按照时间戳回滚；
 
-- `Compare` 需要有重载 `operator()(const Key& lhs, const Key& rhs)`。
+- `Key` and `Value` need to have default constructor and a copy construct;
+
+  `Key` 和 `Value` 需要有默认构造和拷贝构造；
+
+- Both `Key` and `Value` *must* be *trivally copable, trivally movable and
+  trivally destructable*.
+
+  `Key` 和 `Value` 必须是平凡可复制、平凡可移动、平凡可析构的（所有数据必须存在类空间内部，并保证直接储存数据后读出的内容与之前的数据完全一致）；
+
+- `Compare` class needs to have an overloaded
+  `operator()(const Key& lhs, const Key& rhs)`.
+
+  `Compare` 需要有重载 `operator()(const Key& lhs, const Key& rhs)`。
 
 ## Overview 概览
 
 ```c++
 template<class Key, class Value, class Compare>
 class BPTree {
-private:
+public:
     using Ptr = long;
 
+    struct PairData {
+        Key key;
+        Value value;
+        int timeStamp;
+    }
+
+    /**
+     * Binding the tree with a certain file.  If the file is empty, a head
+     * node for a new class is stored, and the tree is constructed.  If not,
+     * the metadata of the old tree is read.
+     */
     BPTree(const char* fileName);
 
     BPTree(const std::string& fileName);
@@ -41,7 +68,7 @@ private:
     bool Insert(const Key& key, const Value& value, int timeStamp);
 
     /**
-     * Erase the pair with the input key.
+     * Move the pair with the input key to deleted zone.
      * @param key
      */
     void Erase(const Key& key);
@@ -62,5 +89,44 @@ private:
      * Tell whether there is a node with the input key.
      */
     bool Contains(const Key& key);
+
+    Value
+
+private:
+    struct Head {
+        long nodeSize; // the proper size making sure the block size is 4KiB
+        Ptr head = -1;
+        Ptr garbage = -1; // a single linked list to store the erased pair(s)
+    }
 };
 ```
+## Technical Details 技术细节
+
+### block size 块大小
+
+The total storage of a block should be `4KiB`.
+
+一个块的大小应当为 `4KiB`。
+
+### Erasion 数据移除
+
+Every erased pair should not be actually removed.  Instead, it should be move
+to a place dedicated for garbages (reserved for roll back operations).
+(Clearing operation is excluded.)
+
+被移除的节点不应被真的删除，它们应当被移到专门放置移除节点的地方（为回滚操作预留）。（`Clear` 操作除外）
+
+### Cache 快取 / 缓存
+
+- The node that have been queried just now, say `Contains()`.
+
+  此前刚刚被询问的节点，如 `Contains()`。
+
+- Head node.
+
+  头节点。
+
+- (Optional) The nodes that is frequently used, like the nodes close to the head.
+
+  （可选）经常访问的节点，如离头节点很近的节点。
+
