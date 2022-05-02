@@ -1,4 +1,4 @@
-# B Plus Tree for Train Ticket System
+# B Plus Tree for the Train Ticket System
 
 This is a mapping class on external storage, mapping every key to a value with a time stamp to make sure user can roll back to a certain time.
 
@@ -98,7 +98,7 @@ public:
     Value
 
 private:
-    struct Head {
+    struct Head_ {
         long nodeSize; // the proper size making sure the block size is 4KiB
         Ptr head = -1;
         Ptr garbage = -1; // a single linked list to store the erased pair(s)
@@ -109,7 +109,47 @@ private:
         // maybe some other cached stuff
     };
 
-    Head head_;
+    struct Block_ {
+        PairData data[2 * kTargetSize_];
+        Ptr      pointers[2 * kTargetSize_]; // For leaf nodes, use it as linked pointer to other leafs
+        long     count = 0;
+        bool     leaf  = false;
+    };
+
+    constexpr static long kBlockSize_  = 4096;
+    constexpr static long kTargetSize_ = (kBlockSize - 2 * sizeof(Ptr)) / (sizeof(Ptr) + sizeof(PairData)) / 2 - 1;
+
+    static_assert(kTargetSize_ >= 2 && sizeof(Block_) > kBlockSize_);
+
+    template<class Type>
+    Type Read_(Ptr position);
+
+    /**
+     * Read the block from the file.
+     * @param position
+     * @return the block at the position
+     */
+    Block_ ReadBlock_(Ptr position);
+
+    /**
+     * Read the head meta from the class.
+     * @param position
+     * @return the ptr data
+     */
+    Head_ ReadHead_(Ptr position);
+
+    /**
+     * Allocate a space at the end of the file.
+     */
+    Ptr New_(long size);
+
+    /**
+     * Store the value at the given position.
+     */
+    template<class Type>
+    void Write_(Ptr position, const Type& value);
+
+    Head_ head_;
 };
 ```
 ## Technical Details 技术细节
