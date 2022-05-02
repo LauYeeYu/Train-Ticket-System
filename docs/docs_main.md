@@ -16,6 +16,8 @@
 
 - [登录信息](#登录信息)
 
+- [信息表](#信息表)
+
 - 交互
 
 ### Main Data Structure 主要数据结构
@@ -23,6 +25,10 @@
 - B+ 树（用以建立数据的索引及储存数据）
 
   具体参见 [B+ 树文档](docs_bpt.md)
+
+- 平铺储存结构（用以储存大块数据）
+
+  具体参见 [平铺储存结构文档](docs_tile_storage.md)
 
 ## 用户数据储存
 
@@ -48,6 +54,11 @@ struct FixedString {
     char& operator[](long index);
     bool operator==(const FixedString& rhs);
     bool operator<(const FixedString& rhs);
+};
+
+template<long size>
+struct FixedStringHash {
+    std::size_t operator()(); // get the string hash
 };
 
 struct User {
@@ -79,6 +90,11 @@ struct FixedString {
     bool operator<(const FixedString& rhs);
 };
 
+template<long size>
+struct FixedStringHash {
+    std::size_t operator()(); // get the string hash
+};
+
 struct Train {
     FixedString<20> trainID;
     FixedString<40> stations;
@@ -99,14 +115,31 @@ struct Train {
 ## 登录信息
 ```c++
 class LoginPool {
+    LoginPool();
+
+    ~LoginPool();
+
     bool Contains(FixedString<20> name); // Tell whether a user has logged in
 
     const User& getData(FixedString<20> name);
 
+    void Clear();
+
 private:
-    LinkedHashMap<FixedString<20>, User> loginUserMap_;
+    LinkedHashMap<FixedString<20>, User, FixedStringHash<20>> loginUserMap_;
 };
 
 ```
+
+## 信息表
+- 用户信息索引表（B+ 树）
+
+- 用户数据表（平铺储存结构）
+
+- 车次信息索引表（B+ 树）
+
+- 车次数据表（平铺储存结构）
+
+- 车次购票表（平铺储存结构）
 
 ## 交互
