@@ -68,17 +68,15 @@ public:
     void Clear();
 
 private:
-    // the empty nodes to be recycled for new nodes (with a single linked list)
-    Ptr deletedNodes_ = -1;
-
-    std::fstream file_;
-
+    template<class Type>
+    Type Read_(Ptr position);
+    
     /**
      * Read the node from the file.
      * @param position
      * @return the node at the position
      */
-    Node Read_(Ptr position);
+    Node ReadNode_(Ptr position);
 
     /**
      * Read the ptr data from the file.  Seemed to be dedicated for the deletedNodes_.
@@ -97,6 +95,11 @@ private:
      */
     template<class Type>
     void Write_(Ptr position, const Type& value);
+
+    // the empty nodes to be recycled for new nodes (with a single linked list)
+    Ptr deletedNodes_ = -1;
+
+    std::fstream file_;
 };
 ```
 
@@ -153,3 +156,4 @@ linked list.  That is, the node at `deletedNodes_`.  And set the
 `deletedNodes_` to be the node next to `deleteNodes_`.
 
   如果 `deletedNodes_` 值不为 `-1`，将节点覆盖在 `deletedNodes_` 的位置，并将 `deletedNodes_` 设定为下一节点。
+
