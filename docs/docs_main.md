@@ -98,6 +98,7 @@ struct FixedStringHash {
 struct Train {
     FixedString<20> trainID;
     FixedString<40> stations;
+    long place = -1;
     int stationNum;
     int seatNum;
     int prices[100];
