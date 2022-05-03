@@ -51,7 +51,13 @@ public:
      * Get the value at the postion.
      * @return the data at the position
      */
-    T Get(Ptr);
+    T Get(Ptr position);
+
+    /**
+     * Get the value at the postion.
+     * @return the data at the position
+     */
+    Node GetNode(Ptr position);
 
     /**
      * Modify the data at the position with the newValue and the time stamp.
