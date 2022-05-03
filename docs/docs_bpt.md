@@ -8,9 +8,9 @@ Required:
 
 要求：
 
-- To maintain a external-storage-based mapping class with unique keys;
+- To maintain a external-storage-based mapping class with keys that may not be unique;
 
-  维护一个键唯一的外部存储映射类；
+  维护一个键未必唯一的外部存储映射类；
 
 - The class is able to roll back to a certain time;
 
@@ -20,25 +20,30 @@ Required:
 
   `Key` 和 `Value` 需要有默认构造和拷贝构造；
 
-- Both `Key` and `Value` *must* be *trivally copable, trivally movable and
+- Both `Key` and `Value` *must* be *trivally copyable, trivally movable and
   trivally destructable*.
 
   `Key` 和 `Value` 必须是平凡可复制、平凡可移动、平凡可析构的（所有数据必须存在类空间内部，并保证直接储存数据后读出的内容与之前的数据完全一致）；
 
-- `Compare` class needs to have an overloaded
+- `KeyCompare` and `ValueCompare` class needs to have an overloaded
   `operator()(const Key& lhs, const Key& rhs)`.
 
-  `Compare` 需要有重载 `operator()(const Key& lhs, const Key& rhs)`。
+  `KeyCompare` 和 `ValueCompare` 需要有重载 `operator()(const Key& lhs, const Key& rhs)`。
 
-- `Equal` class needs to have an overloaded
+- `KeyEqual` and `ValueCompare` class needs to have an overloaded
   `operator()(const Key& lhs, const Key& rhs)`.
 
-  `Equal` 需要有重载 `operator()(const Key& lhs, const Key& rhs)`。
+  `KeyEqual` 和 `ValueCompare` 需要有重载 `operator()(const Key& lhs, const Key& rhs)`。
 
 ## Overview 概览
 
 ```c++
-template<class Key, class Value, class Compare, class Equal>
+template<class Key,
+         class Value,
+         class KeyCompare   = std::less<Key>,
+         class ValueCompare = std::less<Value>,
+         class KeyEqual     = std::equal<Key>,
+         class ValueEqual   = std::equal<Value>>
 class BPTree {
 public:
     using Ptr = long;
@@ -95,7 +100,17 @@ public:
      */
     bool Contains(const Key& key);
 
-    Value
+    /**
+     * Find the first node with the key.
+     @return the first node with the input key
+     */
+    Value FindFirst(const Key& key);
+
+    /**
+     * Get all the value with the input key.
+     @return string with the input key
+     */
+    std::basic_string<Value> FindAll(const Key& key);
 
 private:
     struct Head_ {
@@ -139,7 +154,7 @@ private:
     Head_ ReadHead_(Ptr position);
 
     /**
-     * Allocate a space at the end of the file.
+     * Allocate a space of 4KiB at the end of the file.
      */
     Ptr New_(long size);
 
@@ -185,4 +200,3 @@ The following cases may be cached.
 - (Optional) The nodes that is frequently used, like the nodes close to the head.
 
   （可选）经常访问的节点，如离头节点很近的节点。
-
