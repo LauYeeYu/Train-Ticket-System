@@ -66,6 +66,7 @@ struct User {
     FixedString<30> password;
     FixedString<20> name; // Actually a UTF-8 string
     FixedString<30> mailAdress;
+    long            orderInfo = -1; // for ``query_order''
     int             privilege = 0;
 };
 ```
@@ -95,19 +96,41 @@ struct FixedStringHash {
     std::size_t operator()(); // get the string hash
 };
 
+struct Date {
+    bool operator<(const Date& rhs);
+    bool operator>(const Date& rhs);
+    bool operator==(const Date& rhs);
+    bool operator+=(int rhs);
+    bool operator+(int rhs);
+    friend std::ostream<<(std::ostream& os, const Date& date);
+
+    int month, day;
+};
+
+struct Time {
+    bool operator<(const Time& rhs);
+    bool operator>(const Time& rhs);
+    bool operator==(const Time& rhs);
+    bool operator+=(const Time& rhs);
+    bool operator+(const Time& rhs);
+    bool operator+=(int rhs);
+    bool operator+(int rhs);
+    int ToInt(); // the minute counting
+    friend std::ostream<<(std::ostream& os, const Time& time);
+
+    int day, hour, time;
+};
+
 struct Train {
     FixedString<20> trainID;
     FixedString<40> stations;
     long place = -1;
     int stationNum;
-    int seatNum;
-    int prices[100];
-    int startHour;
-    int startMinute;
-    int travelTimes[100];
-    int stopoverTimes[100];
-    int saleMonth;
-    int saleDay;
+    int seatNum[100];
+    int prefixPriceSum[100];
+    Time departureTime[100];
+    Time arrivalTime[100];
+    Date startDate, endDate;
     char Type;
     bool status = false; // Indicate whether the train is released or not
 };
@@ -133,14 +156,21 @@ private:
 ```
 
 ## 信息表
-- 用户信息索引表（B+ 树）
 
-- 用户数据表（平铺储存结构）
+- 用户信息索引表（B+ 树）: `user_index`
 
-- 车次信息索引表（B+ 树）
+- 用户数据表（平铺储存结构）: `user_data`
 
-- 车次数据表（平铺储存结构）
+- 用户购票表（平铺储存结构）: `user_ticket_data`
 
-- 车次购票表（平铺储存结构）
+- 始发站车次索引表（B+ 树）: `start_station_index`
+
+- 终点站车次索引表（B+ 树）: `terminal_station_index`
+
+- 车次信息索引表（B+ 树）: `train_index`
+
+- 车次数据表（平铺储存结构）: `train_data`
+
+- 车次购票表（平铺储存结构）: `ticket_data`
 
 ## 交互
