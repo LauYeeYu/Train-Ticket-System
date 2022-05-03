@@ -46,7 +46,7 @@ public:
     struct PairData {
         Key key;
         Value value;
-        int timeStamp;
+        long timeStamp;
     }
 
     /**
@@ -70,7 +70,7 @@ public:
      * @param value
      * @return a bool to tell whether this operation is success or not
      */
-    bool Insert(const Key& key, const Value& value, int timeStamp);
+    bool Insert(const Key& key, const Value& value, long timeStamp);
 
     /**
      * Move the pair with the input key to deleted zone.
@@ -83,7 +83,7 @@ public:
      * after that time stamp, the bahaviour is undefined.
      *
      */
-    void RollBack(int timeStamp);
+    void RollBack(long timeStamp);
 
     /**
      * Clear all the data in this tree. All the space is ready to be reused.

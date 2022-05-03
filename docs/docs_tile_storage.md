@@ -16,8 +16,9 @@ public:
     using Ptr = long;
 
     struct Node {
-        T   value;
-        Ptr previous = -1;
+        T    value;
+        long timeStamp;
+        Ptr  previous = -1;
     }
 
     /**
