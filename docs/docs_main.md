@@ -111,10 +111,11 @@ struct Time {
     bool operator<(const Time& rhs);
     bool operator>(const Time& rhs);
     bool operator==(const Time& rhs);
-    bool operator+=(const Time& rhs);
-    bool operator+(const Time& rhs);
-    bool operator+=(int rhs);
-    bool operator+(int rhs);
+    Time& operator+=(const Time& rhs);
+    bool operator-(const Time& rhs);
+    Time operator+(const Time& rhs);
+    Time& operator+=(int rhs);
+    Time operator+(int rhs);
     int ToInt(); // the minute counting
     friend std::ostream<<(std::ostream& os, const Time& time);
 
@@ -175,3 +176,5 @@ private:
 - 车次购票表（平铺储存结构）: `ticket_data`
 
 ## 交互
+
+请参阅[交互部分的文档](docs_interaction.md)。

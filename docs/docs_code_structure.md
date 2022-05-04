@@ -5,7 +5,7 @@
 ```c++
 int main();
 
-void Request(TokenScanner& input, UserManage& users, TrainManage& trains);
+bool Request(TokenScanner& input, UserManage& users, TrainManage& trains);
 ```
 
 ## In File `fixed_string.h`
@@ -333,9 +333,11 @@ public:
 
     long Addorder(const std::string& name, long position);
 
-    long LastOrder(const std::string& name);
+    long ModifyLastOrderPtr(long position, long timeStamp);
 
     void RollBack(long time);
+
+    void Clear();
 
 private:
     LoginPool loginPool_;
@@ -367,10 +369,11 @@ struct Time {
     bool operator<(const Time& rhs);
     bool operator>(const Time& rhs);
     bool operator==(const Time& rhs);
-    bool operator+=(const Time& rhs);
-    bool operator+(const Time& rhs);
-    bool operator+=(int rhs);
-    bool operator+(int rhs);
+    Time& operator+=(const Time& rhs);
+    bool operator-(const Time& rhs);
+    Time operator+(const Time& rhs);
+    Time& operator+=(int rhs);
+    Time operator+(int rhs);
     int ToInt(); // the minute counting
     friend std::ostream<<(std::ostream& os, const Time& time);
 
@@ -382,9 +385,9 @@ struct Train {
     Station stations;
     long queuefirst = -1;
     long queuelast = -1;
-    int stationNum;
-    int seatNum[100];
-    int prefixPriceSum[100];
+    int  stationNum;
+    int  seatNum[100];
+    int  prefixPriceSum[100];
     Time departureTime[100];
     Time arrivalTime[100];
     Date startDate, endDate;
@@ -397,7 +400,7 @@ struct Ticket {
     int  number;
     int  price;
     int  from, to;
-    bool state; // true for bought, false for queuing
+    int state; // 1 for bought, 0 for queuing, -1 for refunded
     long last = -1; // the last query
     long queue = -1; // the next queuing order
 };
@@ -432,6 +435,8 @@ class TrainManage {
     void Refund(TokenScanner& input);
 
     void RollBack();
+
+    void Clear();
 };
 ```
     
