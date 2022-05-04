@@ -139,6 +139,7 @@ struct Train {
 ## 登录信息
 ```c++
 class LoginPool {
+public:
     LoginPool();
 
     ~LoginPool();
