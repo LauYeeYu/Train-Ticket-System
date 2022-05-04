@@ -10,7 +10,7 @@
 
 ### Basic Components 基本组件
 
-*注：如需查看代码结构，请参阅 [代码结构文档](docs_code_structure.md)*
+*注：如需查看代码结构，请参阅[代码结构文档](docs_code_structure.md)。*
 
 - [用户数据储存](#用户数据储存)
 

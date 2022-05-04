@@ -317,7 +317,7 @@ public:
 
     ~UserManage();
 
-    void Adduser(TokenScanner& input);
+    void Adduser(TokenScanner& input, long timeStamp);
 
     void Login(TokenScanner& input);
 
@@ -325,13 +325,13 @@ public:
 
     void Query(TokenScanner& input);
 
-    void Modify(TokenScanner& input);
+    void Modify(TokenScanner& input, long timeStamp);
 
     bool Logged(const std::string& name);
 
     long LastOrder(const std::string& name);
 
-    long Addorder(const std::string& name, long position);
+    long Addorder(const std::string& name, long position, long timeStamp);
 
     long ModifyLastOrderPtr(long position, long timeStamp);
 
@@ -413,14 +413,14 @@ struct Ticket {
 ```c++
 #include "train.h"
 class TrainManage {
-    public:
+public:
     TrainManage();
 
     ~TrainManage();
 
-    void Add(TokenScanner& input);
+    void Add(TokenScanner& input, long timeStamp);
 
-    void Release(TokenScanner& input);
+    void Release(TokenScanner& input, long timeStamp);
 
     void QueryTrain(TokenScanner& input);
 
@@ -428,13 +428,13 @@ class TrainManage {
 
     void QueryTransfer(TokenScanner& input);
 
-    void TryBuy(TokenScanner& input);
+    void TryBuy(TokenScanner& input, long timeStamp);
 
     void QueryOrder(TokenScanner& input);
 
-    void Refund(TokenScanner& input);
+    void Refund(TokenScanner& input, long timeStamp);
 
-    void RollBack();
+    void RollBack(long timeStamp);
 
     void Clear();
 };
