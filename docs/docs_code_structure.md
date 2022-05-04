@@ -341,6 +341,9 @@ public:
 
 private:
     LoginPool loginPool_;
+
+    auto userIndex_ = BPTree<UserName, long>("user_index");
+    auto userData_ = TileStorage<User>("user_data");
 };
 ```
 
@@ -386,10 +389,10 @@ struct Train {
     long queuefirst = -1;
     long queuelast = -1;
     int  stationNum;
-    int  seatNum[100];
-    int  prefixPriceSum[100];
-    Time departureTime[100];
-    Time arrivalTime[100];
+    int  seatNum[101];
+    int  prefixPriceSum[101];
+    Time departureTime[101];
+    Time arrivalTime[101];
     Date startDate, endDate;
     char Type;
     bool status = false; // Indicate whether the train is released or not
@@ -404,6 +407,10 @@ struct Ticket {
     long last = -1; // the last query
     long queue = -1; // the next queuing order
 };
+
+struct TrainTicketCount {
+    int remained[100][100];
+}
 
 } // namespace train
 ```
@@ -437,6 +444,13 @@ public:
     void RollBack(long timeStamp);
 
     void Clear();
+
+private:
+    auto trainIndex_ = BPTree<TrainID, long>("train_index");
+    auto trainData_ = TileStorage<Train>("train_data");
+    auto ticketData_ = TileStorage<TrainTicketCount>("ticket_data");
+    auto startIndex_ = BPTree<Station>("start_station_index");
+    auto terminalIndex_ = BPTree<Station>("terminal_station_index");
+    auto userTicketData_ = TileStorage<Ticket>("user_ticket_data");
 };
 ```
-    
