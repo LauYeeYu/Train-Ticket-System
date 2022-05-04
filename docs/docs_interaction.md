@@ -1,5 +1,7 @@
 # Interaction
 
+*注：如需查看代码结构，请参阅[代码结构文档](docs_code_structure.md)。*
+
 ## `add_user`
 
 参数：
