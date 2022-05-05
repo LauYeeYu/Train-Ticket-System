@@ -24,13 +24,20 @@
 
 ### Main Data Structure 主要数据结构
 
-- B+ 树（用以建立数据的索引及储存数据）
+- 外部存储
+  - B+ 树（用以建立数据的索引及储存数据）
 
-  具体参见 [B+ 树文档](docs_bpt.md)
+    具体参见 [B+ 树文档](docs_bpt.md)
 
-- 平铺储存结构（用以储存大块数据）
+  - 平铺储存结构（用以储存大块数据）
 
-  具体参见 [平铺储存结构文档](docs_tile_storage.md)
+    具体参见 [平铺储存结构文档](docs_tile_storage.md)
+
+- 内存 (memory)
+
+  - `LinkedHashMap`
+
+  - `Vector`
 
 ### Bouns
 
