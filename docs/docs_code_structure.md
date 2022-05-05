@@ -5,7 +5,7 @@
 ```c++
 int main();
 
-bool Request(TokenScanner& input, UserManage& users, TrainManage& trains);
+bool Request(UserManage& users, TrainManage& trains);
 ```
 
 ## In File `fixed_string.h`
@@ -24,6 +24,36 @@ template<long size>
 struct FixedStringHash {
     std::size_t operator()(); // get the string hash
 };
+```
+
+## In File `parameter_table.h`
+
+```c++
+#include <iostream>
+
+namspace parameter {
+
+class ParameterTable {
+public:
+    ParameterTable();
+
+    ~ParameterTable();
+
+    std::string& operator[](char c);
+    const std::string& operator[](char c) const;
+
+    const std::string& GetCommand() const;
+
+    void ReadNewLine();
+
+private:
+    long timeStamp_;
+    std::string command_;
+    std::string table_[26];
+};
+
+} // namespace parameter
+
 ```
 
 ## In File `BP_tree.h`
@@ -317,15 +347,15 @@ public:
 
     ~UserManage();
 
-    void Adduser(TokenScanner& input, long timeStamp);
+    void Adduser(parameter::ParameterTable& input, long timeStamp);
 
-    void Login(TokenScanner& input);
+    void Login(parameter::ParameterTable& input);
 
-    void Logout(TokenScanner& input);
+    void Logout(parameter::ParameterTable& input);
 
-    void Query(TokenScanner& input);
+    void Query(parameter::ParameterTable& input);
 
-    void Modify(TokenScanner& input, long timeStamp);
+    void Modify(parameter::ParameterTable& input, long timeStamp);
 
     bool Logged(const std::string& name);
 
@@ -425,21 +455,21 @@ public:
 
     ~TrainManage();
 
-    void Add(TokenScanner& input, long timeStamp);
+    void Add(parameter::ParameterTable& input, long timeStamp);
 
-    void Release(TokenScanner& input, long timeStamp);
+    void Release(parameter::ParameterTable& input, long timeStamp);
 
-    void QueryTrain(TokenScanner& input);
+    void QueryTrain(parameter::ParameterTable& input);
 
-    void QueryTicket(TokenScanner& input);
+    void QueryTicket(parameter::ParameterTable& input);
 
-    void QueryTransfer(TokenScanner& input);
+    void QueryTransfer(parameter::ParameterTable& input);
 
-    void TryBuy(TokenScanner& input, long timeStamp);
+    void TryBuy(parameter::ParameterTable& input, long timeStamp);
 
-    void QueryOrder(TokenScanner& input);
+    void QueryOrder(parameter::ParameterTable& input);
 
-    void Refund(TokenScanner& input, long timeStamp);
+    void Refund(parameter::ParameterTable& input, long timeStamp);
 
     void RollBack(long timeStamp);
 
