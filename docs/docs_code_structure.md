@@ -31,8 +31,6 @@ struct FixedStringHash {
 ```c++
 #include <iostream>
 
-namspace parameter {
-
 class ParameterTable {
 public:
     ParameterTable();
@@ -51,9 +49,6 @@ private:
     std::string command_;
     std::string table_[26];
 };
-
-} // namespace parameter
-
 ```
 
 ## In File `BP_tree.h`
@@ -347,15 +342,15 @@ public:
 
     ~UserManage();
 
-    void Adduser(parameter::ParameterTable& input, long timeStamp);
+    void Adduser(ParameterTable& input, long timeStamp);
 
-    void Login(parameter::ParameterTable& input);
+    void Login(ParameterTable& input);
 
-    void Logout(parameter::ParameterTable& input);
+    void Logout(ParameterTable& input);
 
-    void Query(parameter::ParameterTable& input);
+    void Query(ParameterTable& input);
 
-    void Modify(parameter::ParameterTable& input, long timeStamp);
+    void Modify(ParameterTable& input, long timeStamp);
 
     bool Logged(const std::string& name);
 
@@ -455,21 +450,21 @@ public:
 
     ~TrainManage();
 
-    void Add(parameter::ParameterTable& input, long timeStamp);
+    void Add(ParameterTable& input, long timeStamp);
 
-    void Release(parameter::ParameterTable& input, long timeStamp);
+    void Release(ParameterTable& input, long timeStamp);
 
-    void QueryTrain(parameter::ParameterTable& input);
+    void QueryTrain(ParameterTable& input);
 
-    void QueryTicket(parameter::ParameterTable& input);
+    void QueryTicket(ParameterTable& input);
 
-    void QueryTransfer(parameter::ParameterTable& input);
+    void QueryTransfer(ParameterTable& input);
 
-    void TryBuy(parameter::ParameterTable& input, long timeStamp);
+    void TryBuy(ParameterTable& input, long timeStamp);
 
-    void QueryOrder(parameter::ParameterTable& input);
+    void QueryOrder(ParameterTable& input);
 
-    void Refund(parameter::ParameterTable& input, long timeStamp);
+    void Refund(ParameterTable& input, long timeStamp);
 
     void RollBack(long timeStamp);
 
