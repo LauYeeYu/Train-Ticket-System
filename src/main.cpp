@@ -16,8 +16,26 @@
 
 #include <iostream>
 
-int main() {
+#include "parameter_table.h"
+#include "train_manage.h"
+#include "user_manage.h"
 
+bool Request(ParameterTable& parameterTable, UserManage& users, TrainManage& trains);
+
+void Init();
+
+int main() {
+    ParameterTable parameterTable;
+    TrainManage trainManage;
+    UserManage userManage;
+    Init();
+    while (std::cin) {
+        parameterTable.ReadNewLine();
+        if (!Request(parameterTable, userManage, trainManage)) {
+            break;
+        }
+    }
+    return 0;
 }
 
-bool Request(UserManage& users, TrainManage& trains);
+bool Request(ParameterTable& parameterTable, UserManage& users, TrainManage& trains);
