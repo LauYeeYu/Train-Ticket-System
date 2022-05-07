@@ -43,6 +43,8 @@ public:
     const std::string& GetCommand() const;
 
     void ReadNewLine();
+    
+    long Timestamp() const;
 
 private:
     long timeStamp_;
