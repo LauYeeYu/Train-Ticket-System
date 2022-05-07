@@ -451,6 +451,8 @@ public:
     ~TrainManage();
 
     void Add(ParameterTable& input, long timeStamp);
+    
+    void Delete(ParameterTable& input, long timeStamp);
 
     void Release(ParameterTable& input, long timeStamp);
 
