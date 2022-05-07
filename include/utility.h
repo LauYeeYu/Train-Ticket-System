@@ -14,8 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef TICKET_SYSTEM_UTILITY_H
-#define TICKET_SYSTEM_UTILITY_H
+#ifndef TICKET_SYSTEM_INCLUDE_UTILITY_H
+#define TICKET_SYSTEM_INCLUDE_UTILITY_H
 
 #include <utility>
 
@@ -36,4 +36,4 @@ public:
 	Pair(Pair<U1, U2> &&other) : first(other.first), second(other.second) {}
 };
 
-#endif // TICKET_SYSTEM_UTILITY_H
+#endif // TICKET_SYSTEM_INCLUDE_UTILITY_H

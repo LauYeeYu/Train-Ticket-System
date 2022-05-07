@@ -14,13 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-/**
- * @file lau/token_scanner.cpp
- *
- * This is a internal source file, including the implementation of the
- * <code>TokenScanner</code> class.
- */
-
 #include "token_scanner.h"
 
 #include <iostream>

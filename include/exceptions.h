@@ -14,9 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
-#ifndef TICKET_SYSTEM_EXCEPTIONS_H
-#define TICKET_SYSTEM_EXCEPTIONS_H
+#ifndef TICKET_SYSTEM_INCLUDE_EXCEPTIONS_H
+#define TICKET_SYSTEM_INCLUDE_EXCEPTIONS_H
 
 #include <cstddef>
 #include <cstring>
@@ -53,4 +52,4 @@ public:
     explicit EmptyContainer(const char* description = "EmptyContainer") : Exception(description) {}
 };
 
-#endif // TICKET_SYSTEM_EXCEPTIONS_H
+#endif // TICKET_SYSTEM_INCLUDE_EXCEPTIONS_H

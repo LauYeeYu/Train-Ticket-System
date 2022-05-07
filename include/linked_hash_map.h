@@ -14,11 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-/**
- * implement a container like std::LinkedHashMap
- */
-#ifndef TICKET_SYSTEM_LINKED_HASH_MAP_H
-#define TICKET_SYSTEM_LINKED_HASH_MAP_H
+#ifndef TICKET_SYSTEM_INCLUDE_LINKED_HASH_MAP_H
+#define TICKET_SYSTEM_INCLUDE_LINKED_HASH_MAP_H
 
 // only for std::equal_to<T> and std::hash<T>
 #include <functional>
@@ -1098,4 +1095,4 @@ private:
     LinkedHashTable<value_type, PairHash, PairEqual> table_;
 };
 
-#endif // TICKET_SYSTEM_LINKED_HASH_MAP_H
+#endif // TICKET_SYSTEM_INCLUDE_LINKED_HASH_MAP_H

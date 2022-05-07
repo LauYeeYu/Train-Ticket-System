@@ -21,8 +21,8 @@
  * <code>lau::TokenScanner</code> class.
  */
 
-#ifndef TICKET_SYSTEM_TOKEN_SCANNER_H
-#define TICKET_SYSTEM_TOKEN_SCANNER_H
+#ifndef TICKET_SYSTEM_INCLUDE_TOKEN_SCANNER_H
+#define TICKET_SYSTEM_INCLUDE_TOKEN_SCANNER_H
 
 #include <iostream>
 
@@ -166,4 +166,4 @@ private:
     TokenScannerMode mode_ = multiple;
 };
 
-#endif // TICKET_SYSTEM_TOKEN_SCANNER_H
+#endif // TICKET_SYSTEM_INCLUDE_TOKEN_SCANNER_H

@@ -20,8 +20,8 @@
  * This is a external header file, including the stuff about <code>Vector</code>.
  */
 
-#ifndef LAU_CPP_LIB_LAU_VECTOR_H
-#define LAU_CPP_LIB_LAU_VECTOR_H
+#ifndef TICKET_SYSTEM_INCLUDE_LAU_VECTOR_H
+#define TICKET_SYSTEM_INCLUDE_LAU_VECTOR_H
 
 #include <climits>
 #include <cstddef>
@@ -32,8 +32,6 @@ using SizeT = long;
 
 #include "exceptions.h"
 
-namespace lau {
-
 /**
  * @class Vector
  *
@@ -43,12 +41,9 @@ namespace lau {
  * @tparam T the value type in the vector
  * @tparam Allocator the memory allocator
  */
-template<class T, class Allocator = std::allocator<T>>
+template<class T>
 class Vector {
 public:
-    using AllocatorType = Allocator;
-    using PointerAllocatorType = typename std::allocator_traits<Allocator>::template rebind_alloc<T*>;
-
     class Iterator;
     class ConstIterator;
 
@@ -240,20 +235,16 @@ public:
         const Vector<T>* vectorPtr_ = nullptr;
     };
 
-    Vector() noexcept(noexcept(Allocator())) = default;
+    Vector() = default;
 
-    explicit Vector(const Allocator& allocator) : allocator_(allocator), pointerAllocator_(allocator) {}
-
-    Vector(SizeT count, const T& value, const Allocator& allocator = Allocator())
-        : allocator_(allocator), pointerAllocator_(allocator) {
+    Vector(SizeT count, const T& value) {
         this->Reserve(count);
         for (SizeT i = 0; i < count; ++i) {
             this->PushBack(value);
         }
     }
 
-    explicit Vector(SizeT count, const Allocator& allocator = Allocator())
-        : allocator_(allocator), pointerAllocator_(allocator) {
+    explicit Vector(SizeT count) {
         this->Reserve(count);
         for (SizeT i = 0; i < count; ++i) {
             this->PushBack(T());
@@ -262,9 +253,7 @@ public:
 
     template<class InputIterator>
     Vector(const InputIterator& begin,
-           const InputIterator& end,
-           const Allocator& allocator = Allocator())
-        : allocator_(allocator), pointerAllocator_(allocator) {
+           const InputIterator& end) {
         this->Reserve(end - begin);
         for (auto element = begin; element != end; ++element) {
             this->PushBack(*element);
@@ -273,40 +262,24 @@ public:
 
     Vector(const Vector& obj) : capacity_(obj.size_),
                                 size_(obj.size_),
-                                beginIndex_(0),
-                                allocator_(obj.allocator_),
-                                pointerAllocator_(obj.pointerAllocator_) {
-        target_ = pointerAllocator_.allocate(capacity_);
+                                beginIndex_(0) {
+        target_ = new T*[capacity_];
         for (SizeT i = 0; i < size_; ++i) {
-            target_[i] = allocator_.allocate(1);
-            try {
-                ::new(target_[i]) T(*(obj.target_[i + obj.beginIndex_]));
-            } catch (...) {
-                for (SizeT j = 0; j < i; ++j) {
-                    target_[j]->~T();
-                    allocator_.deallocate(target_[j], 1);
-                }
-                pointerAllocator_.deallocate(target_, capacity_);
-                throw;
-            }
+            target_[i] = new T(obj.target_[i + obj.beginIndex_]);
         }
     }
 
     Vector(Vector&& obj) noexcept : capacity_(obj.capacity_),
                                     size_(obj.size_),
                                     beginIndex_(obj.beginIndex_),
-                                    target_(obj.target_),
-                                    allocator_(std::move(obj.allocator_)),
-                                    pointerAllocator_(std::move(obj.pointerAllocator_)){
+                                    target_(obj.target_) {
         obj.target_ = nullptr;
         obj.capacity_ = 0;
         obj.size_ = 0;
         obj.beginIndex_ = 0;
     }
 
-    Vector(std::initializer_list<T> init,
-           const Allocator& allocator = Allocator())
-        : allocator_(allocator), pointerAllocator_(allocator) {
+    Vector(std::initializer_list<T> init) {
         this->Reserve(init.size());
         for (const auto& element : init) {
             this->PushBack(element);
@@ -319,21 +292,9 @@ public:
         capacity_ = obj.size_;
         size_ = obj.size_;
         beginIndex_ = 0;
-        allocator_ = obj.allocator_;
-        pointerAllocator_ = obj.pointerAllocator_;
-        target_ = pointerAllocator_.allocate(capacity_);
+        target_ = new T*[capacity_];
         for (SizeT i = 0; i < size_; ++i) {
-            target_[i] = allocator_.allocate(1);
-            try {
-                ::new(target_[i]) T(*(obj.target_[i + obj.beginIndex_]));
-            } catch (...) {
-                for (SizeT j = 0; j < i; ++j) {
-                    target_[j]->~T();
-                    allocator_.deallocate(target_[j], 1);
-                }
-                pointerAllocator_.deallocate(target_, capacity_);
-                throw;
-            }
+            target_[i] = new T(*(obj.target_[i + obj.beginIndex_]));
         }
         return *this;
     }
@@ -344,8 +305,6 @@ public:
         size_ = obj.size_;
         beginIndex_ = obj.beginIndex_;
         target_ = obj.beginIndex_;
-        allocator_ = std::move(obj.allocator_);
-        pointerAllocator_ = std::move(obj.pointerAllocator_);
         obj.target_ = nullptr;
         obj.capacity_ = 0;
         obj.size_ = 0;
@@ -467,11 +426,10 @@ public:
      */
     Vector& Clear() noexcept {
         for (SizeT i = 0; i < size_; ++i) {
-            target_[i + beginIndex_]->~T();
-            allocator_.deallocate(target_[i + beginIndex_], 1);
+            delete target_[i + beginIndex_];
             target_[i + beginIndex_] = nullptr;
         }
-        pointerAllocator_.deallocate(target_, capacity_);
+        delete[] target_;
         target_ = nullptr;
         capacity_ = 0;
         size_ = 0;
@@ -520,13 +478,7 @@ public:
         for (SizeT i = size_; i > index; --i) {
             target_[i + beginIndex_] = target_[i + beginIndex_ - 1];
         }
-        target_[index + beginIndex_] = allocator_.allocate(1);
-        try {
-            ::new(target_[index + beginIndex_]) T(value);
-        } catch (...) {
-            allocator_.deallocate(target_[index + beginIndex_], 1);
-            throw;
-        }
+        target_[index + beginIndex_] = new T(value);
         ++size_;
         return Iterator(target_ + beginIndex_ + index, this);
     }
@@ -563,13 +515,11 @@ public:
         if (index >= size_) throw OutOfBound();
         --size_;
         if (index == 0) {
-            target_[beginIndex_]->~T();
-            allocator_.deallocate(target_[beginIndex_], 1);
+            delete target_[beginIndex_];
             target_[beginIndex_] = nullptr;
             ++beginIndex_;
         } else {
-            target_[beginIndex_ + index]->~T();
-            allocator_.deallocate(target_[beginIndex_ + index], 1);
+            delete target_[index + beginIndex_];
             for (SizeT i = index; i < size_; ++i) {
                 target_[i + beginIndex_] = target_[i + beginIndex_ + 1];
             }
@@ -585,13 +535,7 @@ public:
      */
     Vector& PushBack(const T& value) {
         if (NeedEnlarging_()) Enlarge_();
-        target_[size_ + beginIndex_] = allocator_.allocate(1);
-        try {
-            ::new(target_[size_ + beginIndex_]) T(value);
-        } catch (...) {
-            allocator_.deallocate(target_[size_ + beginIndex_], 1);
-            throw;
-        }
+        target_[size_ + beginIndex_] = new T(value);
         ++size_;
         return *this;
     }
@@ -607,13 +551,7 @@ public:
     template<class... Args>
     Vector& EmplaceBack(Args&&... args) {
         if (NeedEnlarging_()) Enlarge_();
-        target_[size_ + beginIndex_] = allocator_.allocate(1);
-        try {
-            ::new(target_[size_ + beginIndex_]) T(std::forward<Args>(args)...);
-        } catch (...) {
-            allocator_.deallocate(target_[size_ + beginIndex_], 1);
-            throw;
-        }
+        target_[size_ + beginIndex_] = new T(std::forward<Args>(args)...);
         ++size_;
         return *this;
     }
@@ -625,13 +563,7 @@ public:
      */
     Vector& PushFront(const T& value) {
         if (beginIndex_ > 0) {
-            target_[beginIndex_ - 1] = allocator_.allocate(1);
-            try {
-                ::new(target_[beginIndex_]) T(value);
-            } catch (...) {
-                allocator_.deallocate(target_[beginIndex_], 1);
-                throw;
-            }
+            target_[beginIndex_ - 1] = new T(value);
             --beginIndex_;
             ++size_;
         } else {
@@ -639,14 +571,7 @@ public:
             for (SizeT i = size_; i > 0; --i) {
                 target_[i] = target_[i - 1];
             }
-            target_[0] = allocator_.allocate(1);
-            try {
-                ::new(target_[0]) T(value);
-            } catch (...) {
-                allocator_.deallocate(target_[0], 1);
-                ++beginIndex_;
-                throw;
-            }
+            target_[0] = new T(value);
             ++size_;
         }
         return *this;
@@ -663,13 +588,7 @@ public:
     template<class... Args>
     Vector& EmplaceFront(Args... args) {
         if (beginIndex_ > 0) {
-            target_[beginIndex_ - 1] = allocator_.allocate(1);
-            try {
-                ::new(target_[beginIndex_]) T(args...);
-            } catch (...) {
-                allocator_.deallocate(target_[beginIndex_], 1);
-                throw;
-            }
+            target_[beginIndex_ - 1] = new T(std::forward<Args>(args)...);
             --beginIndex_;
             ++size_;
         } else {
@@ -677,14 +596,7 @@ public:
             for (SizeT i = size_; i > 0; --i) {
                 target_[i] = target_[i - 1];
             }
-            target_[0] = allocator_.allocate(1);
-            try {
-                ::new(target_[0]) T(args...);
-            } catch (...) {
-                allocator_.deallocate(target_[0], 1);
-                ++beginIndex_;
-                throw;
-            }
+            target_[0] = new T(std::forward<Args>(args)...);
             ++size_;
         }
         return *this;
@@ -697,8 +609,8 @@ public:
      */
     Vector& PopBack() {
         if (size_ == 0) throw EmptyContainer();
-        target_[size_ + beginIndex_ - 1]->~T();
-        allocator_.deallocate(target_[size_ + beginIndex_ - 1], 1);
+        delete target_[size_ + beginIndex_ - 1];
+        target_[size_ + beginIndex_ - 1] = nullptr;
         --size_;
         if (size_ == 0) beginIndex_ = 0;
         return *this;
@@ -713,8 +625,7 @@ public:
     Vector& PopFront() {
         if (size_ == 0) throw EmptyContainer();
         --size_;
-        target_[beginIndex_]->~T();
-        allocator_.deallocate(target_[beginIndex_], 1);
+        delete target_[beginIndex_];
         target_[beginIndex_] = nullptr;
         ++beginIndex_;
         if (size_ == 0) beginIndex_ = 0;
@@ -730,11 +641,11 @@ public:
         if (newCapacity <= capacity_ - beginIndex_) return *this;
 
         T** tmp = target_;
-        target_ = pointerAllocator_.allocate(newCapacity);
+        target_ = new T*[newCapacity];
         for (SizeT i = 0; i < size_; ++i) target_[i] = tmp[i + beginIndex_];
         for (SizeT i = size_; i < capacity_; ++i) target_[i] = nullptr;
         beginIndex_ = 0;
-        pointerAllocator_.deallocate(tmp, capacity_);
+        delete[] tmp;
         capacity_ = newCapacity;
         return *this;
     }
@@ -762,14 +673,6 @@ public:
         T** tmpTarget = other.target_;
         other.target_ = this->target_;
         this->target_ = tmpTarget;
-
-        AllocatorType tmpAllocator = other.allocator_;
-        other.allocator_ = this->allocator_;
-        this->allocator_ = other.allocator_;
-
-        PointerAllocatorType tmpPointerAllocator = other.pointerAllocator_;
-        other.pointerAllocator_ = this->pointerAllocator_;
-        this->pointerAllocator_ = other.pointerAllocator_;
 
         return *this;
     }
@@ -810,11 +713,11 @@ public:
     Vector& ShrinkToFit() {
         if (size_ == capacity_) return *this;
         T** tmp = target_;
-        target_ = pointerAllocator_.allocate(size_);
+        target_ = new T*[size_];
         for (SizeT i = 0; i < size_; ++i) {
             target_[i] = tmp[i + beginIndex_];
         }
-        pointerAllocator_.deallocate(tmp, capacity_);
+        delete[] tmp;
         capacity_ = size_;
         beginIndex_ = 0;
         return *this;
@@ -831,22 +734,13 @@ public:
     Vector& Resize(SizeT count) {
         if (size_ > count) {
             for (SizeT i = count; i < size_; ++i) {
-                target_[i + beginIndex_]->~T();
-                allocator_.deallocate(target_[i + beginIndex_], 1);
+                delete target_[i + beginIndex_];
+                target_[i + beginIndex_] = nullptr;
             }
         } else {
             Reserve(count);
             for (SizeT i = size_; i < count; ++i) {
-                target_[i + beginIndex_] = allocator_.allocate(1);
-                try {
-                    ::new(target_[i + beginIndex_]) T();
-                } catch (...) {
-                    for (SizeT j = 0; j < i; ++j) {
-                        target_[j + beginIndex_]->~T();
-                        allocator_.deallocate(target_[j + beginIndex_], 1);
-                    }
-                    throw;
-                }
+                target_[i + beginIndex_] = new T();
             }
         }
         size_ = count;
@@ -865,22 +759,13 @@ public:
     Vector& Resize(SizeT count, const T& value) {
         if (size_ > count) {
             for (SizeT i = count; i < size_; ++i) {
-                target_[i + beginIndex_]->~T();
-                allocator_.deallocate(target_[i + beginIndex_], 1);
+                delete target_[i + beginIndex_];
+                target_[i + beginIndex_] = nullptr;
             }
         } else {
             Reserve(count);
             for (SizeT i = size_; i < count; ++i) {
-                target_[i + beginIndex_] = allocator_.allocate(1);
-                try {
-                    ::new(target_[i + beginIndex_]) T(value);
-                } catch (...) {
-                    for (SizeT j = 0; j < i; ++j) {
-                        target_[j + beginIndex_]->~T();
-                        allocator_.deallocate(target_[j + beginIndex_], 1);
-                    }
-                    throw;
-                }
+                target_[i + beginIndex_] = new T(value);
             }
         }
         size_ = count;
@@ -895,27 +780,11 @@ public:
      */
     [[nodiscard]] SizeT Capacity() const noexcept { return capacity_; }
 
-    /**
-     * Get a copy of the allocator.
-     * @return a copy of the allocator
-     */
-    [[nodiscard]] AllocatorType GetAllocator() const noexcept { return allocator_; }
-
-    /**
-     * Get the maximum size of the vector.
-     * @return the maximum size of the vector
-     */
-    [[nodiscard]] long MaxSize() const noexcept {
-        return std::allocator_traits<Allocator>::max_size(allocator_);
-    }
-
 private:
     T**       target_     = nullptr;
     SizeT     size_       = 0;
     SizeT     capacity_   = 0;
     SizeT     beginIndex_ = 0;
-    Allocator            allocator_;
-    PointerAllocatorType pointerAllocator_;
 
     /**
      * Enlarge the vector for the case that the vector is right at its biggest
@@ -940,11 +809,9 @@ private:
  * @param vector1
  * @param vector2
  */
-template<class T, class Allocator>
-void Swap(Vector<T, Allocator>& vector1, Vector<T, Allocator>& vector2) noexcept {
+template<class T>
+void Swap(Vector<T>& vector1, Vector<T>& vector2) noexcept {
     vector1.Swap(vector2);
 }
 
-} // namespace lau
-
-#endif // LAU_CPP_LIB_LAU_VECTOR_H
+#endif // TICKET_SYSTEM_INCLUDE_LAU_VECTOR_H
