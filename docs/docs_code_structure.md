@@ -3,9 +3,11 @@
 ## In File `main.cpp`
 
 ```c++
-int main();
+bool Request(ParameterTable& parameterTable, UserManage& users, TrainManage& trains);
 
-bool Request(UserManage& users, TrainManage& trains);
+void Init();
+
+int main();
 ```
 
 ## In File `fixed_string.h`
