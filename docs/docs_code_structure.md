@@ -60,8 +60,8 @@ template<class Key,
          class Value,
          class KeyCompare   = std::less<Key>,
          class ValueCompare = std::less<Value>,
-         class KeyEqual     = std::equal<Key>,
-         class ValueEqual   = std::equal<Value>>
+         class KeyEqual     = std::equal_to<Key>,
+         class ValueEqual   = std::equal_to<Value>>
 class BPTree {
 public:
     using Ptr = long;
@@ -70,7 +70,7 @@ public:
         Key key;
         Value value;
         long timeStamp;
-    }
+    };
 
     /**
      * Binding the tree with a certain file.  If the file is empty, a head
@@ -198,7 +198,7 @@ public:
         T    value;
         long timeStamp;
         Ptr  previous = -1;
-    }
+    };
 
     /**
      * Binding the class with a certain file.  If the file is not empty, the
@@ -294,8 +294,6 @@ private:
 ```c++
 #include "fixed_string.h"
 
-namespace user {
-
 using UserName   = FixedString<20>;
 using Password   = FixedString<30>;
 using Name       = FixedString<20>;
@@ -305,7 +303,7 @@ struct User {
     UserName   userName;
     Password   password;
     Name       name; // Actually a UTF-8 string
-    mailAdress mailAdress;
+    mailAdress mailAddress;
     long       orderInfo = -1; // for ``query_order''
     int        privilege = 0;
 };
@@ -313,14 +311,16 @@ struct User {
 class UserCompare {
     bool operator()(const User& lhs, const User& rhs);
 };
-
-}
 ```
 
 ## In File `user_manage.h`
 ```c++
+#include "BP_tree.h"
 #include "fixed_string.h"
-#include "user"
+#include "linked_hash_map.h"
+#include "parameter_table.h"
+#include "tile_storage.h"
+#include "user.h"
 
 class LoginPool {
 public:
@@ -369,8 +369,8 @@ public:
 private:
     LoginPool loginPool_;
 
-    auto userIndex_ = BPTree<UserName, long>("user_index");
-    auto userData_ = TileStorage<User>("user_data");
+    BPTree<UserName, long> userIndex_ = BPTree<UserName, long>("user_index");
+    TileStorage<User> userData_ = TileStorage<User>("user_data");
 };
 ```
 
@@ -378,8 +378,6 @@ private:
 
 ```c++
 #include "fixed_string.h"
-
-namesapce train {
 
 using TrainID = FixedString<20>;
 using Station = FixedString<40>;
@@ -390,7 +388,6 @@ struct Date {
     bool operator==(const Date& rhs);
     bool operator+=(int rhs);
     bool operator+(int rhs);
-    friend std::ostream<<(std::ostream& os, const Date& date);
 
     int month, day;
 };
@@ -405,16 +402,15 @@ struct Time {
     Time& operator+=(int rhs);
     Time operator+(int rhs);
     int ToInt(); // the minute counting
-    friend std::ostream<<(std::ostream& os, const Time& time);
-
+    
     int day, hour, time;
 };
 
 struct Train {
     TrainID trainID;
     Station stations;
-    long queuefirst = -1;
-    long queuelast = -1;
+    long queueFirst = -1;
+    long queueLast = -1;
     int  stationNum;
     int  seatNum[101];
     int  prefixPriceSum[101];
@@ -437,15 +433,17 @@ struct Ticket {
 
 struct TrainTicketCount {
     int remained[100][100];
-}
-
-} // namespace train
+};
 ```
 
 ## In File `train_manage.h`
 
 ```c++
+#include "BP_tree.h"
+#include "parameter_table.h"
+#include "tile_storage.h"
 #include "train.h"
+
 class TrainManage {
 public:
     TrainManage();
@@ -475,11 +473,11 @@ public:
     void Clear();
 
 private:
-    auto trainIndex_ = BPTree<TrainID, long>("train_index");
-    auto trainData_ = TileStorage<Train>("train_data");
-    auto ticketData_ = TileStorage<TrainTicketCount>("ticket_data");
-    auto startIndex_ = BPTree<Station>("start_station_index");
-    auto terminalIndex_ = BPTree<Station>("terminal_station_index");
-    auto userTicketData_ = TileStorage<Ticket>("user_ticket_data");
+    BPTree<TrainID, long> trainIndex_ = BPTree<TrainID, long>("train_index");
+    TileStorage<Train> trainData_ = TileStorage<Train>("train_data");
+    TileStorage<TrainTicketCount> ticketData_ = TileStorage<TrainTicketCount>("ticket_data");
+    BPTree<Station, long> startIndex_ = BPTree<Station, long>("start_station_index");
+    BPTree<Station, long> terminalIndex_ = BPTree<Station, long>("terminal_station_index");
+    TileStorage<Ticket> userTicketData_ = TileStorage<Ticket>("user_ticket_data");
 };
 ```
