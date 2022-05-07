@@ -21,18 +21,22 @@
 
 class ParameterTable {
 public:
-    ParameterTable();
+    ParameterTable() = default;
 
-    ~ParameterTable();
+    ~ParameterTable() = default;
 
-    std::string& operator[](char c);
-    const std::string& operator[](char c) const;
+    [[nodiscard]] std::string& operator[](char c);
+    [[nodiscard]] const std::string& operator[](char c) const;
 
-    const std::string& GetCommand() const;
+    [[nodiscard]] const std::string& GetCommand() const;
 
     void ReadNewLine();
 
-    long TimeStamp() const;
+    [[nodiscard]] long TimeStamp() const;
+
+#ifdef LAU_TEST
+    void Print() const;
+#endif // LAU_TEST
 
 private:
     long timeStamp_;
