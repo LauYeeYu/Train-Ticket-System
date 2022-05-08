@@ -14,21 +14,25 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+#include <fstream>
 #include <iostream>
 
 #include "parameter_table.h"
 #include "train_manage.h"
 #include "user_manage.h"
 
-bool Request(ParameterTable& parameterTable, UserManage& users, TrainManage& trains);
+
+void TryCreateFile(const char* fileName);
 
 void Init();
 
+bool Request(ParameterTable& parameterTable, UserManage& users, TrainManage& trains);
+
 int main() {
+    Init();
     ParameterTable parameterTable;
     TrainManage trainManage;
     UserManage userManage;
-    Init();
     while (std::cin) {
         parameterTable.ReadNewLine();
         if (!Request(parameterTable, userManage, trainManage)) {
@@ -39,3 +43,23 @@ int main() {
 }
 
 bool Request(ParameterTable& parameterTable, UserManage& users, TrainManage& trains);
+
+void TryCreateFile(const char* fileName) {
+    std::ifstream tester(fileName);
+    if (!(tester.good())) {
+        std::ofstream creator(fileName);
+        creator.close();
+    }
+    tester.close();
+}
+
+void Init() {
+    TryCreateFile("user_index");
+    TryCreateFile("user_data");
+    TryCreateFile("train_index");
+    TryCreateFile("train_data");
+    TryCreateFile("ticket_index");
+    TryCreateFile("start_station_index");
+    TryCreateFile("terminal_station_index");
+    TryCreateFile("user_ticket_data");
+}
