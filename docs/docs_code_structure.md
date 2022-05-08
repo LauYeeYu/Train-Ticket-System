@@ -3,9 +3,12 @@
 ## In File `main.cpp`
 
 ```c++
-bool Request(ParameterTable& parameterTable, UserManage& users, TrainManage& trains);
+
+void TryCreateFile(const char* fileName);
 
 void Init();
+
+bool Request(ParameterTable& parameterTable, UserManage& users, TrainManage& trains);
 
 int main();
 ```
