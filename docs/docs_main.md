@@ -77,7 +77,7 @@ struct FixedString {
 
 template<long size>
 struct FixedStringHash {
-    std::size_t operator()(); // get the string hash
+    std::size_t operator()(FixedString<size> string); // get the string hash
 };
 
 struct User {
@@ -112,7 +112,7 @@ struct FixedString {
 
 template<long size>
 struct FixedStringHash {
-    std::size_t operator()(); // get the string hash
+    std::size_t operator()(FixedString<size> string); // get the string hash
 };
 
 struct Date {
