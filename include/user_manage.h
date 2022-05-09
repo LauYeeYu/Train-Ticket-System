@@ -37,7 +37,7 @@ public:
     void Clear();
 
 private:
-    LinkedHashMap<FixedString<20>, User, FixedStringHash<20>> loginUserMap_;
+    LinkedHashMap<FixedString<20>, User, FixedStringHash> loginUserMap_;
 };
 
 class UserManage {

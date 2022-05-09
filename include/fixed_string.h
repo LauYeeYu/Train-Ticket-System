@@ -21,16 +21,95 @@
 
 template<long size>
 struct FixedString {
-    char data[size + 1];
+public:
+    FixedString() {
+        data_[0] = '\0';
+    }
 
-    char& operator[](long index);
-    bool operator==(const FixedString& rhs);
-    bool operator<(const FixedString& rhs);
+    explicit FixedString(const char* str) {
+        int i = 0;
+        while (i < size && str[i] != '\0') {
+            data_[i] = str[i];
+            ++i;
+        }
+        data_[i] = '\0';
+    }
+
+    explicit FixedString(const std::string& str) {
+        int i = 0;
+        while (i < size && str[i] != '\0') {
+            data_[i] = str[i];
+            ++i;
+        }
+        data_[i] = '\0';
+    }
+
+    FixedString(const FixedString& str) {
+        int i = 0;
+        while (i < size && str.data_[i] != '\0') {
+            data_[i] = str.data_[i];
+            ++i;
+        }
+        data_[i] = '\0';
+    }
+
+    FixedString& operator=(const FixedString& str) {
+        if (&str == this) return *this;
+
+        int i = 0;
+        while (i < size && str.data_[i] != '\0') {
+            data_[i] = str.data_[i];
+            ++i;
+        }
+        data_[i] = '\0';
+        return *this;
+    }
+
+    char& operator[](long index) { return data_[index]; }
+
+    bool operator==(const FixedString& rhs) {
+        for (long i = 0; i < size; ++i) {
+            if (this->data_[i] != rhs.data_[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
+    bool operator<(const FixedString& rhs) {
+        for (long i = 0; i < size; ++i) {
+            if (this->data_[i] < rhs.data_[i]) {
+                return true;
+            } else if (this->data_[i] > rhs.data_[i]) {
+                return false;
+            }
+        }
+        return false;
+    }
+
+private:
+    char data_[size + 1];
 };
 
-template<long size>
-struct FixedStringHash {
-    std::size_t operator()(); // get the string hash
+class FixedStringHash {
+public:
+    FixedStringHash() = default;
+    FixedStringHash(const FixedStringHash&) = default;
+    FixedStringHash& operator=(const FixedStringHash&) = default;
+    ~FixedStringHash() = default;
+
+    template<long size>
+    std::size_t operator()(FixedString<size> string) {
+        std::size_t hash = 0;
+        for (long i = 0; i < size && string[i] != 0; ++i) {
+            hash = (hash * kPrime_) % kMod_;
+            hash = (hash + string[i] * kPrime_) % kMod_;
+        }
+        return hash;
+    }
+
+private:
+    constexpr static std::size_t kPrime_ = 233;
+    constexpr static std::size_t kMod_ = 137438953481;
 };
 
 #endif // TICKET_SYSTEM_INCLUDE_FIXED_STRING_H
