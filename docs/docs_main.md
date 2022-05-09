@@ -68,16 +68,33 @@
 ```c++
 template<long size>
 struct FixedString {
-    char data[size + 1];
+public:
+    FixedString();
+
+    explicit FixedString(const char* str);
+
+    explicit FixedString(const std::string& str);
+
+    FixedString(const FixedString& str);
+
+    FixedString& operator=(const FixedString& str);
 
     char& operator[](long index);
+
     bool operator==(const FixedString& rhs);
+
     bool operator<(const FixedString& rhs);
 };
 
-template<long size>
-struct FixedStringHash {
-    std::size_t operator()(FixedString<size> string); // get the string hash
+class FixedStringHash {
+public:
+    FixedStringHash() = default;
+    FixedStringHash(const FixedStringHash&) = default;
+    FixedStringHash& operator=(const FixedStringHash&) = default;
+    ~FixedStringHash() = default;
+
+    template<long size>
+    std::size_t operator()(FixedString<size> string);
 };
 
 struct User {
@@ -103,16 +120,33 @@ class UserCompare {
 ```c++
 template<long size>
 struct FixedString {
-    char data[size + 1];
+public:
+    FixedString();
+
+    explicit FixedString(const char* str);
+
+    explicit FixedString(const std::string& str);
+
+    FixedString(const FixedString& str);
+
+    FixedString& operator=(const FixedString& str);
 
     char& operator[](long index);
+
     bool operator==(const FixedString& rhs);
+
     bool operator<(const FixedString& rhs);
 };
 
-template<long size>
-struct FixedStringHash {
-    std::size_t operator()(FixedString<size> string); // get the string hash
+class FixedStringHash {
+public:
+    FixedStringHash() = default;
+    FixedStringHash(const FixedStringHash&) = default;
+    FixedStringHash& operator=(const FixedStringHash&) = default;
+    ~FixedStringHash() = default;
+
+    template<long size>
+    std::size_t operator()(FixedString<size> string);
 };
 
 struct Date {
