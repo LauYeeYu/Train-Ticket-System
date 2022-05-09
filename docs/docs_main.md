@@ -107,14 +107,6 @@ struct User {
 };
 ```
 
-比较结构（用于在 B+ 树中保持有序性）
-
-```c++
-class UserCompare {
-    bool operator()(const User& lhs, const User& rhs);
-};
-```
-
 ## 车次数据储存
 
 ```c++
