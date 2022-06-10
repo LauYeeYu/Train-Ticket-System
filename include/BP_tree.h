@@ -20,132 +20,539 @@
 #include <iostream>
 #include <functional>
 
-template<class Key,
-         class Value,
-         class KeyCompare   = std::less<Key>,
-         class ValueCompare = std::less<Value>,
-         class KeyEqual     = std::equal_to<Key>,
-         class ValueEqual   = std::equal_to<Value>>
+#include "memory.h"
+#include "utility.h"
+
+template <class KeyT, class ValT,
+    class KeyCompare = std::less<KeyT>,
+    class ValueCompare = std::less<ValT>,
+    class KeyEqual = std::equal_to<KeyT>,
+    class ValueEqual = std::equal_to<ValT>>
 class BPTree {
-public:
+
+    static const int M = 64;
+    static const int HM = M / 2;
+    static const int L = 60;
+    static const int HL = (L + 1) / 2;
+
     using Ptr = long;
 
-    struct PairData {
-        Key key;
-        Value value;
-        long timeStamp;
-    };
-
-    /**
-     * Binding the tree with a certain file.  If the file is empty, a head
-     * node for a new class is stored, and the tree is constructed.  If not,
-     * the metadata of the old tree is read.
-     */
-    BPTree(const char* fileName);
-
-    BPTree(const std::string& fileName);
-
-    BPTree(const BPTree&) = delete;
-
-    BPTree& operator=(const BPTree&) = delete;
-
-    ~BPTree();
-
-    /**
-     * Insert a key value pair into this tree.
-     * @param key
-     * @param value
-     * @return a bool to tell whether this operation is success or not
-     */
-    bool Insert(const Key& key, const Value& value, long timeStamp);
-
-    /**
-     * Move the pair with the input key to deleted zone.
-     * @param key
-     */
-    void Erase(const Key& key);
-
-    /**
-     * Roll back to the prevoius time stamp.  If the tree have been cleared
-     * after that time stamp, the bahaviour is undefined.
-     *
-     */
-    void RollBack(long timeStamp);
-
-    /**
-     * Clear all the data in this tree. All the space is ready to be reused.
-     */
-    void Clear();
-
-    /**
-     * Tell whether there is a node with the input key.
-     */
-    bool Contains(const Key& key);
-
-    /**
-     * Find the first node with the key.
-     @return the first node with the input key
-     */
-    Value FindFirst(const Key& key);
-
-    /**
-     * Get all the value with the input key.
-     @return string with the input key
-     */
-    std::basic_string<Value> FindAll(const Key& key);
-
 private:
-    constexpr static long kBlockSize_  = 4096;
-    constexpr static long kTargetSize_ = (kBlockSize_ - 2 * sizeof(Ptr)) / (sizeof(Ptr) + sizeof(PairData)) / 2 - 1;
-    struct Head_ {
-        long nodeSize; // the proper size making sure the block size is 4KiB
-        Ptr head = -1;
-        Ptr garbage = -1; // a single linked list to store the erased pair(s)
+    MemoryManager memo;
 
-        bool cached = false;
-        PairData cachedData; // cached data
+    class Node {
+    public:
+        bool isleaf;
+        int siz;
+        Ptr pos;
+        Node() {}
+    };
+    Ptr root, head;
 
-        // maybe some other cached stuff
+    class NleafNode : public Node {
+    public:
+        KeyT keys[M + 1];
+        Ptr child[M + 2];
+        NleafNode() {}
+
+        inline int Locate(const KeyT &key) {
+            int L = 0, R = this -> siz - 1, ret = R + 1;
+            while (L <= R) {
+                int mid = (L + R) >> 1;
+                if (key < keys[mid]) {
+                    ret = mid;
+                    R = mid - 1;
+                } else {
+                    L = mid + 1;
+                }
+            }
+            return ret;
+        }
+
+        Pair<bool, ValT> Find(const KeyT &key, MemoryManager &memo) {
+            int x = Locate(key);
+            char *to = memo.ReadNode(child[x]);
+            if (reinterpret_cast<Node*>(to) -> isleaf) {
+                return reinterpret_cast<LeafNode*>(to) -> Find_(key);
+            } else {
+                return reinterpret_cast<NleafNode*>(to) -> Find_(key, memo);
+            }
+        }
+
+        Ptr Split(KeyT &reg, MemoryManager &memo) {
+            char *tmp = memo.AddNode();
+            NleafNode* cur = reinterpret_cast<NleafNode*>(tmp);
+            cur -> pos = memo.Last;
+            cur -> isleaf = false;
+            int i, j;
+            for (i = HM + 1, j = 0; i < this -> siz; ++i, ++j) {
+                cur -> keys[j] = this -> keys[i];
+                cur -> child[j] = this -> child[i];
+            }
+            cur -> child[j] = this -> child[this -> siz];
+            reg = this -> keys[HM];
+            this -> siz = HM;
+            cur -> siz = j;
+            return cur -> pos;
+        }
+
+        void Merge(NleafNode* q, const KeyT &mid, MemoryManager &memo) {
+            keys[this -> siz] = mid;
+            for (int i = this -> siz + 1, j = 0; j < q -> siz; ++i, ++j) {
+                this -> keys[i] = q -> keys[j];
+                this -> child[i] = q -> child[j];
+            }
+            this -> siz += q -> siz + 1;
+            this -> child[this -> siz] = q -> child[q -> siz];
+            memo.DelNode(q -> pos);
+        }
+
+        void LeftBalance(NleafNode* q, KeyT &mid) {
+            int sum = this -> siz + q -> siz;
+            int lsiz = (sum + 1) / 2;
+            int i, j;
+            for (i = q -> siz - 1, j = sum - lsiz - 1; i >= 0; --i, --j) {
+                q -> keys[j] = q -> keys[i];
+                q -> child[j + 1] = q -> child[i + 1];
+            }
+            q -> child[j + 1] = q -> child[i + 1];
+            q -> keys[j] = mid;
+            for (i = this -> siz - 1, --j; i > lsiz; --i, --j) {
+                q -> keys[j] = this -> keys[i];
+                q -> child[j + 1] = this -> child[i + 1];
+            }
+            q -> child[0] = this -> child[lsiz + 1];
+            mid = this -> keys[lsiz];
+            this -> siz = lsiz;
+            q -> siz = sum - lsiz;
+        }
+
+        void RightBalance(NleafNode* q, KeyT &mid) {
+            int sum = this -> siz + q -> siz;
+            int lsiz = (sum + 1) / 2;
+            int i, j;
+            this -> keys[this -> siz] = mid;
+            for (i = this -> siz + 1, j = 0; i < lsiz; ++i, ++j) {
+                this -> keys[i] = q -> keys[j];
+                this -> child[i] = q -> child[j];
+            }
+            this -> child[i] = q -> child[j];
+            mid = q -> keys[j];
+            for (i = 0, ++j; j < q -> siz; ++i, ++j) {
+                q -> keys[i] = q -> keys[j];
+                q -> child[i] = q -> child[j];
+            }
+            q -> child[i] = q -> child[j];
+            this -> siz = lsiz;
+            q -> siz = sum - lsiz;
+        }
+
+        bool Insert_(const KeyT &key, const ValT &val, MemoryManager &memo) {
+            int x = Locate(key);
+            char *tmp = memo.ReadNode(child[x]);
+            Node* to = reinterpret_cast<Node*>(tmp);
+            if (to -> isleaf) {
+                LeafNode* cur = reinterpret_cast<LeafNode*>(to);
+                if (!cur -> Insert_(key, val)) {
+                    return false;
+                }
+                if (cur -> siz <= L) {
+                    return true;
+                }
+                KeyT mid;
+                Ptr oth =  cur -> Split(mid, memo);
+                for (int i = this -> siz - 1; i >= x; --i) {
+                    keys[i + 1] = keys[i];
+                    child[i + 2] = child[i + 1];
+                }
+                keys[x] = mid;
+                child[x + 1] = oth;
+                ++ this -> siz;
+            } else {
+                NleafNode* cur = reinterpret_cast<NleafNode*>(to);
+                if (!cur -> Insert_(key, val, memo)) {
+                    return false;
+                }
+                if (cur -> siz < M) {
+                    return true;
+                }
+                KeyT mid;
+                Ptr oth = cur -> Split(mid, memo);
+                for (int i = this -> siz - 1; i >= x; --i) {
+                    keys[i + 1] = keys[i];
+                    child[i + 2] = child[i + 1];
+                }
+                keys[x] = mid;
+                child[x + 1] = oth;
+                ++ this -> siz;
+            }
+            return true;
+        }
+
+        bool Erase_(const KeyT &key, MemoryManager &memo) {
+            int x = Locate(key);
+            char *tmp = memo.ReadNode(child[x]);
+            Node* to = reinterpret_cast<Node*>(tmp);
+            if (to -> isleaf) {
+                LeafNode* cur = reinterpret_cast<LeafNode*>(to);
+                if (!cur -> Erase_(key)) {
+                    return false;
+                }
+                if (cur -> siz >= HL) {
+                    return true;
+                }
+                LeafNode* oth;
+                if (x > 0) {
+                    tmp = memo.ReadNode(child[x - 1]);
+                    oth = reinterpret_cast<LeafNode*>(tmp);
+                    if (cur -> siz + oth -> siz <= L) {
+                        oth -> Merge(cur, memo);
+                        for (int i = x - 1; i < this -> siz - 1; ++i) {
+                            keys[i] = keys[i + 1];
+                            child[i + 1] = child[i + 2];
+                        }
+                        -- this -> siz;
+                    } else {
+                        oth -> LeftBalance(cur, keys[x - 1]);
+                    }
+                } else {
+                    tmp = memo.ReadNode(child[1]);
+                    oth = reinterpret_cast<LeafNode*>(tmp);
+                    if (cur -> siz + oth -> siz <= L) {
+                        cur -> Merge(oth, memo);
+                        for (int i = 0; i < this -> siz - 1; ++i) {
+                            keys[i] = keys[i + 1];
+                            child[i + 1] = child[i + 2];
+                        }
+                        -- this -> siz;
+                    } else {
+                        cur -> RightBalance(oth, keys[0]);
+                    }
+                }
+            } else {
+                NleafNode* cur = reinterpret_cast<NleafNode*>(to);
+                if (!cur -> Erase_(key, memo)) {
+                    return false;
+                }
+                if (cur -> siz >= HM) {
+                    return true;
+                }
+                NleafNode* oth;
+                if (x > 0) {
+                    tmp = memo.ReadNode(child[x - 1]);
+                    oth = reinterpret_cast<NleafNode*>(tmp);
+                    if (cur -> siz + oth -> siz + 1 < M) {
+                        oth -> Merge(cur, keys[x - 1], memo);
+                        for (int i = x - 1; i < this -> siz - 1; ++i) {
+                            keys[i] = keys[i + 1];
+                            child[i + 1] = child[i + 2];
+                        }
+                        -- this -> siz;
+                    } else {
+                        oth -> LeftBalance(cur, keys[x - 1]);
+                    }
+                } else {
+                    tmp = memo.ReadNode(child[1]);
+                    oth = reinterpret_cast<NleafNode*>(tmp);
+                    if (cur -> siz + oth -> siz + 1 < M) {
+                        cur -> Merge(oth, keys[0], memo);
+                        for (int i = 0; i < this -> siz - 1; ++i) {
+                            keys[i] = keys[i + 1];
+                            child[i + 1] = child[i + 2];
+                        }
+                        -- this -> siz;
+                    } else {
+                        cur -> RightBalance(oth, keys[0]);
+                    }
+                }
+            }
+            return true;
+        }
     };
 
-    struct Block_ {
-        PairData data[2 * kTargetSize_];
-        Ptr      pointers[2 * kTargetSize_]; // For leaf nodes, use it as linked pointer to other leafs
-        long     count = 0;
-        bool     leaf  = false;
+    class LeafNode : public Node {
+    public:
+        Ptr nxt;
+        KeyT keys[L + 1];
+        ValT vals[L + 1];
+        LeafNode() {}
+
+        inline int Locate(const KeyT &key) {
+            int L = 0, R = this -> siz - 1, ret = R + 1;
+            while (L <= R) {
+                int mid = (L + R) >> 1;
+                if (key <= keys[mid]) {
+                    ret = mid;
+                    R = mid - 1;
+                } else {
+                    L = mid + 1;
+                }
+            }
+            return ret;
+        }
+
+        Pair<bool, ValT> Find_(const KeyT &key) {
+            int x = Locate(key);
+            if (x < this -> siz && key == keys[x]) {
+                return Pair<bool, ValT>(true, vals[x]);
+            } else {
+                return Pair<bool, ValT>(false, ValT());
+            }
+        }
+
+        Ptr Split(KeyT &reg, MemoryManager &memo) {
+            char *tmp = memo.AddNode();
+            LeafNode* cur = reinterpret_cast<LeafNode*>(tmp);
+            cur -> pos = memo.Last;
+            cur -> isleaf = true;
+            int i, j;
+            for (i = HL, j = 0; i < this -> siz; ++i, ++j) {
+                cur -> keys[j] = this -> keys[i];
+                cur -> vals[j] = this -> vals[i];
+            }
+            reg = cur -> keys[0];
+            this -> siz = HL;
+            cur -> siz = j;
+            cur -> nxt = this -> nxt;
+            this -> nxt = cur -> pos;
+            return cur -> pos;
+        }
+
+        void Merge(LeafNode* q, MemoryManager &memo) {
+            for (int i = this -> siz, j = 0; j < q -> siz; ++i, ++j) {
+                this -> keys[i] = q -> keys[j];
+                this -> vals[i] = q -> vals[j];
+            }
+            this -> siz += q -> siz;
+            this -> nxt = q -> nxt;
+            memo.DelNode(q -> pos);
+        }
+
+        void LeftBalance(LeafNode* q, KeyT &mid) {
+            int sum = this -> siz + q -> siz;
+            int lsiz = (sum + 1) / 2;
+            int i, j;
+            for (i = q -> siz - 1, j = sum - lsiz - 1; i >= 0; --i, --j) {
+                q -> keys[j] = q -> keys[i];
+                q -> vals[j] = q -> vals[i];
+            }
+            for (i = this -> siz - 1; i >= lsiz; --i, --j) {
+                q -> keys[j] = this -> keys[i];
+                q -> vals[j] = this -> vals[i];
+            }
+            mid = q -> keys[0];
+            this -> siz = lsiz;
+            q -> siz = sum - lsiz;
+        }
+
+        void RightBalance(LeafNode* q, KeyT &mid) {
+            int sum = this -> siz + q -> siz;
+            int lsiz = (sum + 1) / 2;
+            int i, j;
+            for (i = this -> siz, j = 0; i < lsiz; ++i, ++j) {
+                this -> keys[i] = q -> keys[j];
+                this -> vals[i] = q -> vals[j];
+            }
+            for (i = 0; j < q -> siz; ++i, ++j) {
+                q -> keys[i] = q -> keys[j];
+                q -> vals[i] = q -> vals[j];
+            }
+            mid = q -> keys[0];
+            this -> siz = lsiz;
+            q -> siz = sum - lsiz;
+        }
+
+        bool Insert_(const KeyT &key, const ValT &val) {
+            int x = Locate(key);
+            if (x < this -> siz && key == keys[x]) {
+                return false;
+            }
+            for (int i = this -> siz - 1; i >= x; --i) {
+                keys[i + 1] = keys[i];
+                vals[i + 1] = vals[i];
+            }
+            keys[x] = key;
+            vals[x] = val;
+            ++ this -> siz;
+            return true;
+        }
+
+        bool Erase_(const KeyT &key) {
+            int x = Locate(key);
+            if (x == this -> siz || key != keys[x]) {
+                return false;
+            }
+            for (int i = x; i < this -> siz - 1; ++i) {
+                keys[i] = keys[i + 1];
+                vals[i] = vals[i + 1];
+            }
+            -- this -> siz;
+            return true;
+        }
     };
 
-    static_assert(kTargetSize_ >= 2 && sizeof(Block_) <= kBlockSize_);
+    bool Find_(const KeyT &key) {
+        if (root == -1) {
+            return false;
+        }
+        char *tmp = memo.ReadNode(root);
+        if (reinterpret_cast<Node*>(tmp) -> isleaf) {
+            return reinterpret_cast<LeafNode*>(tmp) -> Find_(key);
+        } else {
+            return reinterpret_cast<NleafNode*>(tmp) -> Find_(key, memo);
+        }
+    }
 
-    template<class Type>
-    Type Read_(Ptr position);
+    bool Insert_(const KeyT &key, const ValT &val) {
+        if (root == -1) {
+            char *tmp = memo.AddNode();
+            LeafNode* cur = reinterpret_cast<LeafNode*>(tmp);
+            cur -> pos = memo.Last;
+            cur -> isleaf = true;
+            cur -> siz = 1;
+            cur -> keys[0] = key;
+            cur -> vals[0] = val;
+            root = head = cur -> pos;
+            cur -> nxt = -1;
+            return true;
+        }
+        char *tmp = memo.ReadNode(root);
+        Node* rt = reinterpret_cast<Node*>(tmp);
+        if (rt -> isleaf) {
+            if (!reinterpret_cast<LeafNode*>(tmp) -> Insert_(key, val)) {
+                return false;
+            }
+            if (rt -> siz <= L) {
+                return true;
+            }
+            char* tmp2 = memo.AddNode();
+            NleafNode* cur = reinterpret_cast<NleafNode*>(tmp2);
+            cur -> pos = memo.Last;
+            cur -> isleaf = false;
+            cur -> siz = 1;
+            cur -> child[0] = root;
+            KeyT mid;
+            cur -> child[1] = reinterpret_cast<LeafNode*>(tmp) -> Split(mid, memo);
+            cur -> keys[0] = mid;
+            root = cur -> pos;
+        } else {
+            if (!reinterpret_cast<NleafNode*>(tmp) -> Insert_(key, val, memo)) {
+                return false;
+            }
+            if (rt -> siz < M) {
+                return true;
+            }
+            char* tmp2 = memo.AddNode();
+            NleafNode* cur = reinterpret_cast<NleafNode*>(tmp2);
+            cur -> pos = memo.Last;
+            cur -> isleaf = false;
+            cur -> siz = 1;
+            cur -> child[0] = root;
+            KeyT mid;
+            cur -> child[1] = reinterpret_cast<NleafNode*>(tmp) -> Split(mid, memo);
+            cur -> keys[0] = mid;
+            root = cur -> pos;
+        }
+        return true;
+    }
 
-    /**
-     * Read the block from the file.
-     * @param position
-     * @return the block at the position
-     */
-    Block_ ReadBlock_(Ptr position);
+    bool Erase_(const KeyT &key) {
+        if (root == -1) {
+            return false;
+        }
+        char *tmp = memo.ReadNode(root);
+        Node* rt = reinterpret_cast<Node*>(tmp);
+        if (rt -> isleaf) {
+            if (!reinterpret_cast<LeafNode*>(tmp) -> Erase_(key)) {
+                return false;
+            }
+            if (rt -> siz == 0) {
+                memo.DelNode(root);
+                root = -1;
+            }
+        } else {
+            if (!reinterpret_cast<NleafNode*>(tmp) -> Erase_(key, memo)) {
+                return false;
+            }
+            if (rt -> siz == 0) {
+                root = reinterpret_cast<NleafNode*>(rt) -> child[0];
+                memo.DelNode(rt -> pos);
+            }
+        }
+        return true;
+    }
 
-    /**
-     * Read the head meta from the class.
-     * @param position
-     * @return the ptr data
-     */
-    Head_ ReadHead_(Ptr position);
+#ifdef TEST
+    void Traverse() {
+        for (Ptr pos = head; pos != -1; ) {
+            char *tmp = memo.ReadNode(pos);
+            LeafNode* p = reinterpret_cast<LeafNode*>(tmp);
+            for (int i = 0; i < p -> siz; ++i) {
+                std::cout << p -> keys[i] << " ";
+            }
+            std::cout << std::endl;
+            pos = p -> nxt;
+        }
+        //std::cout << std::endl;
+    }
 
-    /**
-     * Allocate a space of 4KiB at the end of the file.
-     */
-    Ptr New_(long size);
+    void DFS(Node* p) {
+        if (p -> isleaf) {
+            LeafNode* pp = reinterpret_cast<LeafNode*>(p);
+            for (int i = 0; i < pp -> siz; ++i) {
+                cout << pp -> keys[i] << " ";
+            }
+            cout << endl;
+        } else {
+            NleafNode* pp = reinterpret_cast<NleafNode*>(p);
+            for (int i = 0; i <= pp -> siz; ++i) {
+                cout << "to subtree" << endl;
+                DFS(pp -> child[i]);
+                cout << "back" << endl;
+                if (i < pp -> siz) {
+                    cout << pp -> keys[i] << endl;
+                }
+            }
+        }
+    }
+#endif
 
-    /**
-     * Store the value at the given position.
-     */
-    template<class Type>
-    void Write_(Ptr position, const Type& value);
+public:
+    BPTree(const char* filename): memo(filename) {
+        root = -1;
+        head = -1;
+    }
+    ~BPTree() {}
 
-    Head_ head_;
+    bool Empty() {
+        return root == -1;
+    }
+
+    bool Find(const KeyT &key) {
+        return Find_(key);
+    }
+
+    bool Insert(const KeyT &key, const ValT &val) {
+        return Insert_(key, val);
+    }
+
+    bool Erase(const KeyT &key) {
+        return Erase_(key);
+    }
+
+#ifdef TEST
+    void traverse() {
+        std::cerr << "start traverse" << std::endl;
+        Traverse();
+        std::cerr << "finish traverse" << std::endl;
+    }
+
+    void printstructure() {
+        std::cerr << "start output tree" << std::endl;
+        DFS(root);
+        std::cerr << "finish output tree" << std::endl;
+    }
+#endif
 };
 
-#endif //TICKET_SYSTEM_INCLUDE_BP_TREE_H
+#endif
