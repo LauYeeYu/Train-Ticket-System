@@ -22,6 +22,7 @@
 
 #include "memory.h"
 #include "utility.h"
+#include <vector>
 
 template <class KeyT, class ValT,
     class KeyCompare = std::less<KeyT>,
@@ -55,6 +56,7 @@ private:
         Node() {}
     };
     Ptr root, head;
+    ValT lastVis;
 
     class NleafNode : public Node {
     public:
@@ -62,27 +64,38 @@ private:
         Ptr child[M + 2];
         NleafNode() {}
 
+        //find the first position greater than or equal to key
         inline int Locate(const KeyT &key, BPTree* tree) {
             int L = 0, R = this -> siz - 1, ret = R + 1;
             while (L <= R) {
                 int mid = (L + R) >> 1;
-                if (tree -> keyComp(key, keys[mid])) {
+                if (tree -> keyComp(keys[mid], key)) {
+                    L = mid + 1;
+                } else {
                     ret = mid;
                     R = mid - 1;
-                } else {
-                    L = mid + 1;
                 }
             }
             return ret;
         }
 
-        Pair<bool, ValT> Find(const KeyT &key, BPTree* tree) {
-            int x = Locate(key);
+        bool Contains_(const KeyT &key, BPTree* tree) {
+            int x = Locate(key, tree);
             char *to = tree -> memo.ReadNode(child[x]);
             if (reinterpret_cast<Node*>(to) -> isleaf) {
-                return reinterpret_cast<LeafNode*>(to) -> Find_(key, tree);
+                return reinterpret_cast<LeafNode*>(to) -> Contains_(key, tree);
             } else {
-                return reinterpret_cast<NleafNode*>(to) -> Find_(key, tree);
+                return reinterpret_cast<NleafNode*>(to) -> Contains_(key, tree);
+            }
+        }
+
+        std::vector<ValT> MultiFind_(const KeyT &key, BPTree* tree) {
+            int x = Locate(key, tree);
+            char *to = tree -> memo.ReadNode(child[x]);
+            if (reinterpret_cast<Node*>(to) -> isleaf) {
+                return reinterpret_cast<LeafNode*>(to) -> MultiFind_(key, tree);
+            } else {
+                return reinterpret_cast<NleafNode*>(to) -> MultiFind_(key, tree);
             }
         }
 
@@ -154,17 +167,15 @@ private:
             q -> siz = sum - lsiz;
         }
 
-        bool Insert_(const KeyT &key, const ValT &val, BPTree* tree) {
+        void Insert_(const KeyT &key, const ValT &val, BPTree* tree) {
             int x = Locate(key, tree);
             char *tmp = tree -> memo.ReadNode(child[x]);
             Node* to = reinterpret_cast<Node*>(tmp);
             if (to -> isleaf) {
                 LeafNode* cur = reinterpret_cast<LeafNode*>(to);
-                if (!cur -> Insert_(key, val, tree)) {
-                    return false;
-                }
+                cur -> Insert_(key, val, tree);
                 if (cur -> siz <= L) {
-                    return true;
+                    return;
                 }
                 KeyT mid;
                 Ptr oth =  cur -> Split(mid, tree);
@@ -177,11 +188,9 @@ private:
                 ++ this -> siz;
             } else {
                 NleafNode* cur = reinterpret_cast<NleafNode*>(to);
-                if (!cur -> Insert_(key, val, tree)) {
-                    return false;
-                }
+                cur -> Insert_(key, val, tree);
                 if (cur -> siz < M) {
-                    return true;
+                    return;
                 }
                 KeyT mid;
                 Ptr oth = cur -> Split(mid, tree);
@@ -193,7 +202,6 @@ private:
                 child[x + 1] = oth;
                 ++ this -> siz;
             }
-            return true;
         }
 
         bool Erase_(const KeyT &key, BPTree* tree) {
@@ -284,26 +292,49 @@ private:
         ValT vals[L + 1];
         LeafNode() {}
 
+        //find the first position greater than or equal to key
         inline int Locate(const KeyT &key, BPTree* tree) {
             int L = 0, R = this -> siz - 1, ret = R + 1;
             while (L <= R) {
                 int mid = (L + R) >> 1;
-                if (!tree -> keyComp(keys[mid], key)) {
+                if (tree -> keyComp(keys[mid], key)) {
+                    L = mid + 1;
+                } else {
                     ret = mid;
                     R = mid - 1;
-                } else {
-                    L = mid + 1;
                 }
             }
             return ret;
         }
 
-        Pair<bool, ValT> Find_(const KeyT &key, BPTree* tree) {
+        bool Contains_(const KeyT &key, BPTree* tree) {
             int x = Locate(key, tree);
             if (x < this -> siz && key == keys[x]) {
-                return Pair<bool, ValT>(true, vals[x]);
+                tree -> lastVis = vals[x];
+                return true;
             } else {
-                return Pair<bool, ValT>(false, ValT());
+                return false;
+            }
+        }
+
+        std::vector<ValT> MultiFind_(const KeyT &key, BPTree* tree) {
+            int x = Locate(key, tree);
+            std::vector<ValT> ret;
+            LeafNode* cur = this;
+            while (1) {
+                while (x < cur -> siz) {
+                    if (tree -> keyEq(key, cur -> keys[x])) {
+                        ret.push_back(cur -> vals[x++]);
+                    } else {
+                        return ret;
+                    }
+                }
+                if (cur -> nxt == -1) {
+                    return ret;
+                }
+                char* tmp = tree -> memo.ReadNode(cur -> nxt);
+                cur = reinterpret_cast<LeafNode*>(tmp);
+                x = 0;
             }
         }
 
@@ -369,11 +400,8 @@ private:
             q -> siz = sum - lsiz;
         }
 
-        bool Insert_(const KeyT &key, const ValT &val, BPTree* tree) {
+        void Insert_(const KeyT &key, const ValT &val, BPTree* tree) {
             int x = Locate(key, tree);
-            if (x < this -> siz && tree -> keyEq(key, keys[x])) {
-                return false;
-            }
             for (int i = this -> siz - 1; i >= x; --i) {
                 keys[i + 1] = keys[i];
                 vals[i + 1] = vals[i];
@@ -381,7 +409,6 @@ private:
             keys[x] = key;
             vals[x] = val;
             ++ this -> siz;
-            return true;
         }
 
         bool Erase_(const KeyT &key, BPTree* tree) {
@@ -398,15 +425,27 @@ private:
         }
     };
 
-    bool Find_(const KeyT &key) {
+    bool Contains_(const KeyT &key) {
         if (root == -1) {
             return false;
         }
         char *tmp = memo.ReadNode(root);
         if (reinterpret_cast<Node*>(tmp) -> isleaf) {
-            return reinterpret_cast<LeafNode*>(tmp) -> Find_(key, this);
+            return reinterpret_cast<LeafNode*>(tmp) -> Contains_(key, this);
         } else {
-            return reinterpret_cast<NleafNode*>(tmp) -> Find_(key, this);
+            return reinterpret_cast<NleafNode*>(tmp) -> Contains_(key, this);
+        }
+    }
+
+    std::vector<ValT> MultiFind_(const KeyT &key) {
+        if (root == -1) {
+            return std::vector<ValT>();
+        }
+        char *tmp = memo.ReadNode(root);
+        if (reinterpret_cast<Node*>(tmp) -> isleaf) {
+            return reinterpret_cast<LeafNode*>(tmp) -> MultiFind_(key, this);
+        } else {
+            return reinterpret_cast<NleafNode*>(tmp) -> MultiFind_(key, this);
         }
     }
 
@@ -424,11 +463,9 @@ private:
             return true;
         }
         char *tmp = memo.ReadNode(root);
-        Node* rt = reinterpret_cast<Node*>(tmp);
-        if (rt -> isleaf) {
-            if (!reinterpret_cast<LeafNode*>(tmp) -> Insert_(key, val, this)) {
-                return false;
-            }
+        if (reinterpret_cast<Node*>(tmp) -> isleaf) {
+            LeafNode* rt = reinterpret_cast<LeafNode*>(tmp);
+            rt -> Insert_(key, val, this);
             if (rt -> siz <= L) {
                 return true;
             }
@@ -443,9 +480,8 @@ private:
             cur -> keys[0] = mid;
             root = cur -> pos;
         } else {
-            if (!reinterpret_cast<NleafNode*>(tmp) -> Insert_(key, val, this)) {
-                return false;
-            }
+            NleafNode* rt = reinterpret_cast<NleafNode*>(tmp);
+            rt -> Insert_(key, val, this);
             if (rt -> siz < M) {
                 return true;
             }
@@ -495,7 +531,7 @@ private:
             char *tmp = memo.ReadNode(pos);
             LeafNode* p = reinterpret_cast<LeafNode*>(tmp);
             for (int i = 0; i < p -> siz; ++i) {
-                std::cout << p -> keys[i] << " ";
+                std::cout << p -> keys[i] << " " << p -> vals[i] << " ";
             }
             std::cout << std::endl;
             pos = p -> nxt;
@@ -515,8 +551,16 @@ public:
         return root == -1;
     }
 
-    bool Find(const KeyT &key) {
-        return Find_(key);
+    bool Contains(const KeyT &key) {
+        return Contains_(key);
+    }
+
+    ValT Find() {
+        return lastVis;
+    }
+
+    std::vector<ValT> MultiFind(const KeyT &key) {
+        return MultiFind_(key);
     }
 
     bool Insert(const KeyT &key, const ValT &val) {
