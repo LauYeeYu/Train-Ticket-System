@@ -210,9 +210,7 @@ private:
 
 - 用户购票表（平铺储存结构）: `user_ticket_data`
 
-- 始发站车次索引表（B+ 树）: `start_station_index`
-
-- 终点站车次索引表（B+ 树）: `terminal_station_index`
+- 始发站车次索引表（B+ 树）: `station_index`
 
 - 车次信息索引表（B+ 树）: `train_index`
 
