@@ -23,28 +23,41 @@
 #include "parameter_table.h"
 #include "tile_storage.h"
 #include "user.h"
+#include "utility.h"
+
+int StringToInt(const std::string& string);
 
 class LoginPool {
 public:
-    LoginPool();
+    LoginPool() = default;
 
-    ~LoginPool();
+    ~LoginPool() = default;
 
-    bool Contains(FixedString<20> name); // Tell whether a user has logged in
+    void Login(const User& user);
 
-    const User& getData(FixedString<20> name);
+    void Logout(const UserName& userName);
+
+    bool Contains(const FixedString<20>& name); // Tell whether a user has logged in
+
+    bool Contains(const std::string& name); // Tell whether a user has logged in
+
+    const User& GetData(const FixedString<20>& name);
+
+    const User& GetData(const std::string& name);
 
     void Clear();
 
+    bool Empty();
+
 private:
-    LinkedHashMap<FixedString<20>, User, FixedStringHash> loginUserMap_;
+    LinkedHashMap<UserName, User, FixedStringHash1> loginUserMap_;
 };
 
 class UserManage {
 public:
-    UserManage();
+    UserManage() = default;
 
-    ~UserManage();
+    ~UserManage() = default;
 
     void Adduser(ParameterTable& input, long timeStamp);
 
@@ -60,7 +73,7 @@ public:
 
     long LastOrder(const std::string& name);
 
-    long Addorder(const std::string& name, long position, long timeStamp);
+    long AddOrder(const std::string& name, long position, long timeStamp);
 
     long ModifyLastOrderPtr(long position, long timeStamp);
 
@@ -69,9 +82,11 @@ public:
     void Clear();
 
 private:
+    void Adduser_(User& user, long timeStamp);
+
     LoginPool loginPool_;
 
-    BPTree<UserName, long> userIndex_ = BPTree<UserName, long>("user_index");
+    BPTree<HashPair, long> userIndex_ = BPTree<HashPair, long>("user_index");
     TileStorage<User>      userData_  = TileStorage<User>("user_data");
 };
 
