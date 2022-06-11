@@ -90,26 +90,46 @@ private:
     char data_[size + 1];
 };
 
-class FixedStringHash {
+class FixedStringHash1 {
 public:
-    FixedStringHash() = default;
-    FixedStringHash(const FixedStringHash&) = default;
-    FixedStringHash& operator=(const FixedStringHash&) = default;
-    ~FixedStringHash() = default;
+    FixedStringHash1() = default;
+    FixedStringHash1(const FixedStringHash1&) = default;
+    FixedStringHash1& operator=(const FixedStringHash1&) = default;
+    ~FixedStringHash1() = default;
 
     template<long size>
     std::size_t operator()(FixedString<size> string) {
         std::size_t hash = 0;
         for (long i = 0; i < size && string[i] != 0; ++i) {
-            hash = (hash * kPrime_) % kMod_;
-            hash = (hash + string[i] * kPrime_) % kMod_;
+            hash = hash * kPrime_;
+            hash = hash + static_cast<unsigned char>(string[i]);
         }
         return hash;
     }
 
 private:
-    constexpr static std::size_t kPrime_ = 233;
-    constexpr static std::size_t kMod_ = 137438953481;
+    constexpr static std::size_t kPrime_ = 1e9 + 7;
+};
+
+class FixedStringHash2 {
+public:
+    FixedStringHash2() = default;
+    FixedStringHash2(const FixedStringHash2&) = default;
+    FixedStringHash2& operator=(const FixedStringHash2&) = default;
+    ~FixedStringHash2() = default;
+
+    template<long size>
+    std::size_t operator()(FixedString<size> string) {
+        std::size_t hash = 0;
+        for (long i = 0; i < size && string[i] != 0; ++i) {
+            hash = hash * kPrime_;
+            hash = hash + static_cast<unsigned char>(string[i]);
+        }
+        return hash;
+    }
+
+private:
+    constexpr static std::size_t kPrime_ = 1e9 + 9;
 };
 
 #endif // TICKET_SYSTEM_INCLUDE_FIXED_STRING_H
