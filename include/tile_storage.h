@@ -17,6 +17,7 @@
 #ifndef TICKET_SYSTEM_INCLUDE_TILE_STORAGE_H
 #define TICKET_SYSTEM_INCLUDE_TILE_STORAGE_H
 
+#include <cstring>
 #include <fstream>
 
 template<class T>
@@ -29,19 +30,19 @@ public:
      * position of deleted nodes should be read from the very beginning of
      * the file.
      */
-    TileStorage(const char* fileName);
+    explicit TileStorage(const char* fileName) : memoryManager_(fileName) {}
 
     /**
      * Binding the class with a certain file.  If the file is not empty, the
      * position of deleted nodes should be read from the very beginning of
      * the file.
      */
-    TileStorage(const std::string& fileName);
+    explicit TileStorage(const std::string& fileName) : memoryManager_(fileName) {}
 
     /**
      * Set the data at very beginning to be deletedNodes_;
      */
-    ~TileStorage();
+    ~TileStorage() = default;
 
     /**
      * Add a new value with a time stamp.
@@ -49,67 +50,32 @@ public:
      * @param timeStamp
      * @return the file position in this class.
      */
-    Ptr Add(const T& value);
+    Ptr Add(const T& value) {
+        char* data = memoryManager_.AddNode();
+        memcpy(data, &value, sizeof(T));
+        return memoryManager_.Last;
+    }
 
     /**
      * Get the value at the postion.
      * @return the data at the position
      */
-    T Get(Ptr position);
-
-    /**
-     * Get the value at the postion.
-     * @return the data at the position
-     */
-    Node GetNode(Ptr position);
+    const T& Get(Ptr position) {
+        char* data = memoryManager_.ReadNode(position);
+        return *(reinterpret_cast<const T*>(data));
+    }
 
     /**
      * Modify the data at the position with the newValue and the time stamp.
      * @return the postion of the new value
      */
-    Ptr Modify(Ptr position, const T& newValue);
-
-    /**
-     * Roll back the data at the position to a certain time stamp.  The node belongs to the ``future'' can be deleted
-     * @return the postion of the rolled backed node
-     */
-    Ptr RollBack(Ptr position);
-
-    void Clear();
+    void Modify(Ptr position, const T& newValue) {
+        char* data = memoryManager_.ReadNode(position);
+        memcpy(data, &newValue, sizeof(T));
+    }
 
 private:
-    template<class Type>
-    Type Read_(Ptr position);
-
-    /**
-     * Read the node from the file.
-     * @param position
-     * @return the node at the position
-     */
-    Node ReadNode_(Ptr position);
-
-    /**
-     * Read the ptr data from the file.  Seemed to be dedicated for the deletedNodes_.
-     * @param position
-     * @return the ptr data
-     */
-    Ptr ReadPtr_(Ptr position);
-
-    /**
-     * Allocate a space at the end of the file.
-     */
-    Ptr New_(long size);
-
-    /**
-     * Store the value at the given position.
-     */
-    template<class Type>
-    void Write_(Ptr position, const Type& value);
-
-    // the empty nodes to be recycled for new nodes (with a single linked list)
-    Ptr deletedNodes_ = -1;
-
-    std::fstream file_;
+    MemoryManager<sizeof(T)> memoryManager_;
 };
 
 #endif // TICKET_SYSTEM_INCLUDE_TILE_STORAGE_H
