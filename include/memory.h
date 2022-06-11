@@ -23,8 +23,9 @@
 #include "BP_tree.h"
 #include "linked_hash_map.h"
 
+template<int kBlockSize>
 class MemoryManager {
-    const int LIM = 200;
+    static constexpr int kLimit = 200;
     std::fstream file;
 
     using Ptr = long;
@@ -34,7 +35,7 @@ private:
         MemNode* pre;
         MemNode* nxt;
         Ptr pos;
-        char bpInfo[4096];
+        char bpInfo[kBlockSize];
         MemNode(Ptr _pos = -1): pos(_pos) {
             pre = nxt = nullptr;
         }
@@ -62,7 +63,7 @@ public:
         for (MemNode* p = head; p != nullptr;) {
             MemNode* q = p -> nxt;
             file.seekp(p -> pos);
-            file.write(p -> bpInfo, 4096);
+            file.write(p -> bpInfo, kBlockSize);
             delete p;
             p = q;
         }
@@ -77,9 +78,9 @@ public:
 
     MemNode* findMemory() {
         MemNode* cur = nullptr;
-        if (mp.Size() >= LIM) {
+        if (mp.Size() >= kLimit) {
             file.seekp(rear -> pos);
-            file.write(rear -> bpInfo, 4096);
+            file.write(rear -> bpInfo, kBlockSize);
             mp.Erase(mp.Find(rear -> pos));
             cur = rear;
             rear = rear -> pre;
@@ -99,7 +100,6 @@ public:
         return cur;
     }
 
-
     Ptr Last;
     char* AddNode() {
         MemNode* cur = findMemory();
@@ -111,7 +111,7 @@ public:
         } else {
             file.seekp(0, std::ios::end);
             cur -> pos = file.tellp();
-            file.write(cur -> bpInfo, 4096);
+            file.write(cur -> bpInfo, kBlockSize);
         }
         mp[cur -> pos] = cur;
         Last = cur -> pos;
@@ -157,7 +157,7 @@ public:
             cur -> pos = pos;
             mp[pos] = cur;
             file.seekg(pos);
-            file.read(cur -> bpInfo, 4096);
+            file.read(cur -> bpInfo, kBlockSize);
         }
         return cur -> bpInfo;
     }

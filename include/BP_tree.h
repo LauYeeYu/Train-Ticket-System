@@ -41,7 +41,7 @@ class BPTree {
     using Ptr = long;
 
 private:
-    MemoryManager memo;
+    MemoryManager<4096> memo;
     KeyCompare keyComp;
     ValueCompare valComp;
     KeyEqual keyEq;

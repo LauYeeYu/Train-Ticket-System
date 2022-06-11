@@ -24,12 +24,6 @@ class TileStorage {
 public:
     using Ptr = long;
 
-    struct Node {
-        T    value;
-        long timeStamp;
-        Ptr  previous = -1;
-    };
-
     /**
      * Binding the class with a certain file.  If the file is not empty, the
      * position of deleted nodes should be read from the very beginning of
@@ -55,7 +49,7 @@ public:
      * @param timeStamp
      * @return the file position in this class.
      */
-    Ptr Add(const T& value, long timeStamp);
+    Ptr Add(const T& value);
 
     /**
      * Get the value at the postion.
@@ -73,13 +67,13 @@ public:
      * Modify the data at the position with the newValue and the time stamp.
      * @return the postion of the new value
      */
-    Ptr Modify(Ptr position, const T& newValue, long timeStamp);
+    Ptr Modify(Ptr position, const T& newValue);
 
     /**
      * Roll back the data at the position to a certain time stamp.  The node belongs to the ``future'' can be deleted
      * @return the postion of the rolled backed node
      */
-    Ptr RollBack(Ptr position, long timeStamp);
+    Ptr RollBack(Ptr position);
 
     void Clear();
 
