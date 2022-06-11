@@ -1,5 +1,5 @@
 // Train Ticket System
-// Copyright (C) 2022 Lau Yee-Yu
+// Copyright (C) 2022 Lau Yee-Yu & relyt871
 //
 // This library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -1067,7 +1067,7 @@ public:
      * throw if pos pointed to a bad element (pos == this->end() || pos points an element out of this)
      */
     void Erase(Iterator position) {
-        if (position.Iterator_ == table_.End()) {
+        if (position.iterator_ == table_.End()) {
             throw InvalidIterator();
         }
         table_.Erase(position.iterator_);

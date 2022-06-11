@@ -1,5 +1,5 @@
 // Train Ticket System
-// Copyright (C) 2022 Lau Yee-Yu
+// Copyright (C) 2022 Lau Yee-Yu & relyt871
 //
 // This library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
