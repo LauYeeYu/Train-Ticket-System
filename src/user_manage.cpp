@@ -40,6 +40,10 @@ void LoginPool::Logout(const UserName& userName) {
     loginUserMap_.Erase(loginUserMap_.Find(userName));
 }
 
+void LoginPool::ModifyProfile(const User& user) {
+    loginUserMap_[user.userName] = user;
+}
+
 void UserManage::Adduser(ParameterTable& input, long timeStamp) {
     User user;
     user.privilege = StringToInt(input['g']);
@@ -154,6 +158,9 @@ void UserManage::Modify(ParameterTable& input, long timeStamp) {
     }
 
     userData_.Modify(position, user);
+    if (loginPool_.Contains(input['u'])) {
+        loginPool_.ModifyProfile(user);
+    }
 
     std::cout << user.userName << " " << user.name << " "
               << user.mailAddress << " " << user.privilege << ENDL;
