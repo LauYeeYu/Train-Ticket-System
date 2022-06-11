@@ -23,6 +23,9 @@
 void TrainManage::Add(ParameterTable& input, long timeStamp) {
     Train train;
     train.trainID = input['i'];
+    if (trainIndex_.Contains(ToHashPair(train.trainID))) {
+        std::cout << "[" << timeStamp << "] -1" << ENDL;
+    }
     train.stationNum = StringToInt(input['n']);
     train.seatNum = StringToInt(input['m']);
 
@@ -60,5 +63,15 @@ void TrainManage::Add(ParameterTable& input, long timeStamp) {
 
     long position = trainData_.Add(train);
     trainIndex_.Insert(ToHashPair(train.trainID), position);
+    std::cout << "[" << timeStamp << "] 0" << ENDL;
 }
 
+void TrainManage::Delete(ParameterTable& input, long timeStamp) {
+    if (!trainIndex_.Contains(ToHashPair(input['i']))) {
+        std::cout << "[" << timeStamp << "] -1" << ENDL;
+        return;
+    }
+    long position = trainIndex_.Find();
+    trainData_.Delete(position);
+    trainIndex_.Erase(ToHashPair(input['i']));
+}

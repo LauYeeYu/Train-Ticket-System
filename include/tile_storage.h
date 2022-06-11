@@ -56,6 +56,10 @@ public:
         return memoryManager_.Last;
     }
 
+    void Delete(Ptr pos) {
+        memoryManager_.DelNode(pos);
+    }
+
     /**
      * Get the value at the postion.
      * @return the data at the position
