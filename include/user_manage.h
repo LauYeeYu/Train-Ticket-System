@@ -45,6 +45,8 @@ public:
 
     const User& GetData(const std::string& name);
 
+    void ModifyProfile(const User& user);
+
     void Clear();
 
     bool Empty();

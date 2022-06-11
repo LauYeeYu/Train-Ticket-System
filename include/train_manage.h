@@ -21,12 +21,15 @@
 #include "parameter_table.h"
 #include "tile_storage.h"
 #include "train.h"
+#include "utility.h"
+
+using StationPair = Pair<long, long>;
 
 class TrainManage {
 public:
-    TrainManage();
+    TrainManage() = default;
 
-    ~TrainManage();
+    ~TrainManage() = default;
 
     void Add(ParameterTable& input, long timeStamp);
 
@@ -51,11 +54,10 @@ public:
     void Clear();
 
 private:
-    BPTree<TrainID, long>         trainIndex_     = BPTree<TrainID, long>("train_index");
+    BPTree<HashPair, long>        trainIndex_     = BPTree<HashPair, long>("train_index");
     TileStorage<Train>            trainData_      = TileStorage<Train>("train_data");
     TileStorage<TrainTicketCount> ticketData_     = TileStorage<TrainTicketCount>("ticket_data");
-    BPTree<Station, long>         startIndex_     = BPTree<Station, long>("start_station_index");
-    BPTree<Station, long>         terminalIndex_  = BPTree<Station, long>("terminal_station_index");
+    BPTree<HashPair, StationPair> stationIndex_   = BPTree<HashPair, StationPair>("station_index");
     TileStorage<Ticket>           userTicketData_ = TileStorage<Ticket>("user_ticket_data");
 };
 

@@ -17,6 +17,7 @@
 #ifndef TICKET_SYSTEM_INCLUDE_TRAIN_H
 #define TICKET_SYSTEM_INCLUDE_TRAIN_H
 
+#include <iostream>
 
 #include "fixed_string.h"
 
@@ -24,41 +25,48 @@ using TrainID = FixedString<20>;
 using Station = FixedString<40>;
 
 struct Date {
-    bool operator<(const Date& rhs);
-    bool operator>(const Date& rhs);
-    bool operator==(const Date& rhs);
-    bool operator+=(int rhs);
-    bool operator+(int rhs);
+    Date() = default;
+    explicit Date(int day) : day(day) {}
+    explicit Date(const std::string& string);
 
-    int month, day;
+    bool operator<(const Date& rhs) const;
+    bool operator>(const Date& rhs) const;
+    bool operator==(const Date& rhs) const;
+    Date& operator+=(int rhs);
+    Date operator+(int rhs);
+
+    int day;
 };
 
 struct Time {
-    bool operator<(const Time& rhs);
-    bool operator>(const Time& rhs);
-    bool operator==(const Time& rhs);
+    Time() = default;
+    explicit Time(int minute) : minute(minute) {}
+    explicit Time(const std::string& string);
+    Time(const Time&) = default;
+    bool operator<(const Time& rhs) const;
+    bool operator>(const Time& rhs) const;
+    bool operator==(const Time& rhs) const;
     Time& operator+=(const Time& rhs);
-    bool operator-(const Time& rhs);
+    Time operator-(const Time& rhs);
     Time operator+(const Time& rhs);
     Time& operator+=(int rhs);
     Time operator+(int rhs);
-    int ToInt(); // the minute counting
 
-    int day, hour, time;
+    int minute;
 };
 
 struct Train {
     TrainID trainID;
-    Station stations;
+    Station stations[101];
     long queueFirst = -1;
     long queueLast = -1;
     int  stationNum;
-    int  seatNum[101];
+    int  seatNum;
     int  prefixPriceSum[101];
     Time departureTime[101];
     Time arrivalTime[101];
     Date startDate, endDate;
-    char Type;
+    char type;
     bool status = false; // Indicate whether the train is released or not
 };
 
@@ -67,13 +75,13 @@ struct Ticket {
     int  number;
     int  price;
     int  from, to;
-    int state; // 1 for bought, 0 for queuing, -1 for refunded
+    int  state; // 1 for bought, 0 for queuing, -1 for refunded
     long last = -1; // the last query
     long queue = -1; // the next queuing order
 };
 
 struct TrainTicketCount {
-    int remained[100][100];
+    int remained[100];
 };
 
 #endif // TICKET_SYSTEM_INCLUDE_TRAIN_H
