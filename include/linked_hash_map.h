@@ -1081,6 +1081,11 @@ public:
      */
     size_t Count(const Key& key) const { return table_.Count(key); }
 
+    bool Contains(const Key& key) const { return table_.Contains(key); }
+
+    template<class K>
+    bool Contains(const K& key) const { return table_.Contains(key); }
+
 
     /**
      * Finds an element with key equivalent to key.

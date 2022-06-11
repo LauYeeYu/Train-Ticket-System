@@ -14,28 +14,27 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef TICKET_SYSTEM_INCLUDE_USER_H
-#define TICKET_SYSTEM_INCLUDE_USER_H
-
-#include "fixed_string.h"
 #include "utility.h"
 
-using UserName   = FixedString<20>;
-using Password   = HashPair;
-using Name       = FixedString<20>;
-using mailAdress = FixedString<30>;
+#include <iostream>
+#include "user_manage.h"
 
-struct User {
-    UserName   userName;
-    Password   password;
-    Name       name; // Actually a UTF-8 string
-    mailAdress mailAddress;
-    long       orderInfo = -1; // for ``query_order''
-    int        privilege = 0;
-};
 
-class UserCompare {
-    bool operator()(const User& lhs, const User& rhs);
-};
+int StringToInt(const std::string& string) {
+    int result = 0;
+    for (char i : string) {
+        result = result * 10 + i - '0';
+    }
+    return result;
+}
 
-#endif // TICKET_SYSTEM_INCLUDE_USER_H
+HashPair ToHashPair(const FixedString<20>& string) {
+    return HashPair(HashPair(FixedStringHash1()(string),
+                             FixedStringHash2()(string)));
+}
+
+
+HashPair ToHashPair(const std::string& string) {
+    return HashPair(HashPair(FixedStringHash1()(string),
+                             FixedStringHash2()(string)));
+}

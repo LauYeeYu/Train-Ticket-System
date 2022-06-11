@@ -17,7 +17,14 @@
 #ifndef TICKET_SYSTEM_INCLUDE_UTILITY_H
 #define TICKET_SYSTEM_INCLUDE_UTILITY_H
 
+#include <iostream>
 #include <utility>
+
+#ifdef BOOST
+#define ENDL "\n"
+#else
+#define ENDL std::endl
+#endif
 
 template<class T1, class T2>
 class Pair {
@@ -26,7 +33,6 @@ public:
 	T2 second;
 	constexpr Pair() : first(), second() {}
 	Pair(const Pair &other) = default;
-	Pair(Pair &&other) = default;
 	Pair(const T1 &x, const T2 &y) : first(x), second(y) {}
 	template<class U1, class U2>
 	Pair(U1 &&x, U2 &&y) : first(x), second(y) {}
@@ -34,6 +40,22 @@ public:
 	Pair(const Pair<U1, U2> &other) : first(other.first), second(other.second) {}
 	template<class U1, class U2>
 	Pair(Pair<U1, U2> &&other) : first(other.first), second(other.second) {}
+
+    bool operator==(const Pair &other) const {
+        return first == other.first && second == other.second;
+    }
+
+    bool operator!=(const Pair &other) const {
+        return !(*this == other);
+    }
+
+    bool operator<(const Pair &other) const {
+        return first < other.first || (first == other.first && second < other.second);
+    }
 };
+
+int StringToInt(const std::string& string);
+
+using HashPair = Pair<std::size_t, std::size_t>;
 
 #endif // TICKET_SYSTEM_INCLUDE_UTILITY_H

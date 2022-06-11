@@ -18,6 +18,9 @@
 #define TICKET_SYSTEM_INCLUDE_FIXED_STRING_H
 
 #include <functional>
+#include <ostream>
+
+#include "utility.h"
 
 template<long size>
 struct FixedString {
@@ -65,17 +68,53 @@ public:
         return *this;
     }
 
+    FixedString& operator=(const std::string& str) {
+        int i = 0;
+        while (i < size && str[i] != '\0') {
+            data_[i] = str[i];
+            ++i;
+        }
+        data_[i] = '\0';
+        return *this;
+    }
+
     char& operator[](long index) { return data_[index]; }
 
-    bool operator==(const FixedString& rhs) {
+    const char& operator[](long index) const { return data_[index]; }
+
+    bool operator==(const FixedString& rhs) const {
         for (long i = 0; i < size; ++i) {
             if (this->data_[i] != rhs.data_[i]) {
                 return false;
             }
+            if (this->data_[i] == '\0') {
+                return true;
+            }
         }
         return true;
     }
-    bool operator<(const FixedString& rhs) {
+
+    friend bool operator==(const FixedString& lhs, const std::string& rhs) {
+        if (rhs.size() > size) return false;
+        for (long i = 0; i < rhs.size(); ++i) {
+            if (lhs.data_[i] != rhs[i]) {
+                return false;
+            }
+        }
+        return lhs.data_[rhs.size()] == '\0';
+    }
+
+    friend bool operator==(const std::string& lhs, const FixedString& rhs) {
+        if (lhs.size() > size) return false;
+        for (long i = 0; i < lhs.size(); ++i) {
+            if (rhs.data_[i] != lhs[i]) {
+                return false;
+            }
+        }
+        return rhs.data_[rhs.size()] == '\0';
+    }
+
+    bool operator<(const FixedString& rhs) const {
         for (long i = 0; i < size; ++i) {
             if (this->data_[i] < rhs.data_[i]) {
                 return true;
@@ -84,6 +123,11 @@ public:
             }
         }
         return false;
+    }
+
+    friend std::ostream& operator<<(std::ostream& os, const FixedString& string) {
+        os << string.data_;
+        return os;
     }
 
 private:
@@ -98,11 +142,20 @@ public:
     ~FixedStringHash1() = default;
 
     template<long size>
-    std::size_t operator()(FixedString<size> string) {
+    std::size_t operator()(const FixedString<size>& string) const {
         std::size_t hash = 0;
         for (long i = 0; i < size && string[i] != 0; ++i) {
             hash = hash * kPrime_;
             hash = hash + static_cast<unsigned char>(string[i]);
+        }
+        return hash;
+    }
+
+    std::size_t operator()(const std::string& string) const {
+        std::size_t hash = 0;
+        for (char i : string) {
+            hash = hash * kPrime_;
+            hash = hash + static_cast<unsigned char>(i);
         }
         return hash;
     }
@@ -119,7 +172,7 @@ public:
     ~FixedStringHash2() = default;
 
     template<long size>
-    std::size_t operator()(FixedString<size> string) {
+    std::size_t operator()(FixedString<size> string) const {
         std::size_t hash = 0;
         for (long i = 0; i < size && string[i] != 0; ++i) {
             hash = hash * kPrime_;
@@ -128,8 +181,32 @@ public:
         return hash;
     }
 
+    std::size_t operator()(const std::string& string) const {
+        std::size_t hash = 0;
+        for (char i : string) {
+            hash = hash * kPrime_;
+            hash = hash + static_cast<unsigned char>(i);
+        }
+        return hash;
+    }
+
 private:
     constexpr static std::size_t kPrime_ = 1e9 + 9;
+};
+
+HashPair ToHashPair(const FixedString<20>& string);
+HashPair ToHashPair(const std::string& string);
+
+class Hash {
+public:
+    Hash() = default;
+    Hash(const Hash&) = default;
+    Hash& operator=(const Hash&) = default;
+    ~Hash() = default;
+
+    std::size_t operator()(const Pair<std::size_t, std::size_t>& pair) const {
+        return pair.first ^ pair.second;
+    }
 };
 
 #endif // TICKET_SYSTEM_INCLUDE_FIXED_STRING_H
