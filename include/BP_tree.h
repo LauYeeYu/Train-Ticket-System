@@ -22,7 +22,6 @@
 
 #include "memory.h"
 #include "utility.h"
-#include <vector>
 
 template <class KeyT, class ValT,
     class KeyCompare = std::less<KeyT>,
@@ -30,23 +29,24 @@ template <class KeyT, class ValT,
     class KeyEqual = std::equal_to<KeyT>,
     class ValueEqual = std::equal_to<ValT>>
 class BPTree {
+
     friend class Node;
     friend class NleafNode;
     friend class LeafNode;
-
-    static const int M = 64;
-    static const int HM = M / 2;
-    static const int L = 60;
-    static const int HL = (L + 1) / 2;
-
     using Ptr = long;
 
 private:
-    MemoryManager<4096> memo;
+    static constexpr int M = 4064 / (sizeof(KeyT) + 8) - 2;
+    static constexpr int HM = M / 2;
+    static constexpr int L = 4064 / (sizeof(KeyT) + sizeof(ValT)) - 1;
+    static constexpr int HL = (L + 1) / 2;
+
     KeyCompare keyComp;
     ValueCompare valComp;
     KeyEqual keyEq;
     ValueEqual valEq;
+
+    MemoryManager<4096> memo;
 
     class Node {
     public:
@@ -89,7 +89,7 @@ private:
             }
         }
 
-        std::vector<ValT> MultiFind_(const KeyT &key, BPTree* tree) {
+        std::basic_string<ValT> MultiFind_(const KeyT &key, BPTree* tree) {
             int x = Locate(key, tree);
             char *to = tree -> memo.ReadNode(child[x]);
             if (reinterpret_cast<Node*>(to) -> isleaf) {
@@ -317,9 +317,9 @@ private:
             }
         }
 
-        std::vector<ValT> MultiFind_(const KeyT &key, BPTree* tree) {
+        std::basic_string<ValT> MultiFind_(const KeyT &key, BPTree* tree) {
             int x = Locate(key, tree);
-            std::vector<ValT> ret;
+            std::basic_string<ValT> ret;
             LeafNode* cur = this;
             while (1) {
                 while (x < cur -> siz) {
@@ -425,6 +425,9 @@ private:
         }
     };
 
+    static_assert(M >= 2 && sizeof(NleafNode) <= 4096);
+    static_assert(L >= 1 && sizeof(LeafNode) <= 4096);
+
     bool Contains_(const KeyT &key) {
         if (root == -1) {
             return false;
@@ -437,9 +440,9 @@ private:
         }
     }
 
-    std::vector<ValT> MultiFind_(const KeyT &key) {
+    std::basic_string<ValT> MultiFind_(const KeyT &key) {
         if (root == -1) {
-            return std::vector<ValT>();
+            return std::basic_string<ValT>();
         }
         char *tmp = memo.ReadNode(root);
         if (reinterpret_cast<Node*>(tmp) -> isleaf) {
@@ -559,7 +562,7 @@ public:
         return lastVis;
     }
 
-    std::vector<ValT> MultiFind(const KeyT &key) {
+    std::basic_string<ValT> MultiFind(const KeyT &key) {
         return MultiFind_(key);
     }
 
@@ -574,6 +577,7 @@ public:
 #ifdef TEST
     void Traverse() {
         std::cerr << "start traverse" << std::endl;
+        std::cerr << M << " " << L << std::endl;
         Traverse_();
         std::cerr << "finish traverse" << std::endl;
     }
