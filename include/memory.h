@@ -19,18 +19,19 @@
 #define TICKET_SYSTEM_INCLUDE_MEMORY_H
 
 #include <fstream>
+#include <iostream>
 
-#include "BP_tree.h"
 #include "linked_hash_map.h"
 
 template<int kBlockSize>
 class MemoryManager {
-    static constexpr int kLimit = 200;
-    std::fstream file;
-
     using Ptr = long;
 
 private:
+    static constexpr int kLimit = std::max(409600 / kBlockSize, 1);
+
+    std::fstream file;
+
     struct MemNode {
         MemNode* pre;
         MemNode* nxt;
