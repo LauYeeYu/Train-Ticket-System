@@ -25,12 +25,13 @@
 
 #include <climits>
 #include <cstddef>
+#include <cstring>
 #include <memory>
 #include <utility>
 
-using SizeT = long;
-
 #include "exceptions.h"
+
+using SizeT = long;
 
 /**
  * @class Vector
@@ -772,6 +773,12 @@ public:
         return *this;
     }
 
+    template<class Compare>
+    Vector& Sort(const Compare& compare) {
+        Sort(compare);
+        return *this;
+    }
+
     /**
      * Get the capacity of the vector.  Please note that since its vector can
      * be popped from the front, so the maximum of the vector might be less
@@ -801,6 +808,29 @@ private:
     /// Check whether a vector needs enlarging.
     [[nodiscard]] bool NeedEnlarging_() const noexcept { return (capacity_ == beginIndex_ + size_); }
 
+    template<class Compare>
+    void Sort_(const Compare& compare) {
+        T** tmp = new T*[size_];
+        MergeSort_(size_, target_ + beginIndex_, tmp, compare);
+    }
+
+    template<class Compare>
+    void MergeSort_(SizeT count, T** array, T** tmp, const Compare& compare) {
+        if (count == 1) return;
+        SizeT m = count >> 1;
+        MergeSort_(m, array, tmp, compare);
+        MergeSort_(count - m, array + m, tmp, compare);
+        for (SizeT i = 0, j = m, t = 0; i < m || j < count; ) {
+            if (i < m && (j >= count || compare(*(array[i]), *(array[j])))) {
+                tmp[t++] = array[i++];
+            } else {
+                tmp[t++] = array[j++];
+            }
+        }
+        for (int i = 0; i < count; ++i) {
+            array[i] = tmp[i];
+        }
+    }
 };
 
 /**
