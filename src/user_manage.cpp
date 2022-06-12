@@ -191,3 +191,9 @@ bool UserManage::Logged(const std::string& name) {
 const User& UserManage::GetUser(const std::string& name) {
     return loginPool_.GetData(name);
 }
+
+void UserManage::Clear() {
+    userData_.Clear();
+    userIndex_.Clear();
+    loginPool_.Clear();
+}

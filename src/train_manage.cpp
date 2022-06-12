@@ -351,3 +351,11 @@ void TrainManage::QueryOrder(ParameterTable& input, UserManage& userManage, long
         std::cout << i << ENDL;
     }
 }
+
+void TrainManage::Clear() {
+    trainData_.Clear();
+    trainIndex_.Clear();
+    ticketData_.Clear();
+    userTicketData_.Clear();
+    stationIndex_.Clear();
+}

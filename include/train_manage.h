@@ -52,7 +52,7 @@ public:
 
     void Refund(ParameterTable& input, long timeStamp);
 
-    void RollBack(long timeStamp);
+    //void RollBack(long timeStamp);
 
     void Clear();
 
