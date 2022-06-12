@@ -35,6 +35,8 @@ struct Date {
     Date& operator+=(int rhs);
     Date operator+(int rhs);
 
+    friend std::ostream& operator<<(std::ostream& os, const Date& date);
+
     int day;
 };
 
@@ -52,6 +54,8 @@ struct Time {
     Time& operator+=(int rhs);
     Time operator+(int rhs);
 
+    friend std::ostream& operator<<(std::ostream& os, const Time& time);
+
     int minute;
 };
 
@@ -60,6 +64,7 @@ struct Train {
     Station stations[101];
     long queueFirst = -1;
     long queueLast = -1;
+    long ticketData = -1;
     int  stationNum;
     int  seatNum;
     int  prefixPriceSum[101];
@@ -67,7 +72,7 @@ struct Train {
     Time arrivalTime[101];
     Date startDate, endDate;
     char type;
-    bool status = false; // Indicate whether the train is released or not
+    bool released = false; // Indicate whether the train is released or not
 };
 
 struct Ticket {
@@ -81,7 +86,8 @@ struct Ticket {
 };
 
 struct TrainTicketCount {
-    int remained[100];
+    int remained[100][100];
+    long trainDataPtr;
 };
 
 #endif // TICKET_SYSTEM_INCLUDE_TRAIN_H

@@ -37,11 +37,11 @@ public:
 
     void Release(ParameterTable& input, long timeStamp);
 
-    void QueryTrain(ParameterTable& input);
+    void QueryTrain(ParameterTable& input, long timeStamp);
 
-    void QueryTicket(ParameterTable& input);
+    void QueryTicket(ParameterTable& input, long timeStamp);
 
-    void QueryTransfer(ParameterTable& input);
+    void QueryTransfer(ParameterTable& input, long timeStamp);
 
     void TryBuy(ParameterTable& input, long timeStamp);
 
