@@ -22,6 +22,7 @@
 #include "tile_storage.h"
 #include "train.h"
 #include "utility.h"
+#include "user_manage.h"
 
 using StationPair = Pair<long, long>;
 
@@ -43,7 +44,9 @@ public:
 
     void QueryTransfer(ParameterTable& input, long timeStamp);
 
-    void TryBuy(ParameterTable& input, long timeStamp);
+    void TryBuy(ParameterTable& input, UserManage& userManage, long timeStamp);
+
+    long AddOrder(Ticket& ticket, long timeStamp);
 
     void QueryOrder(ParameterTable& input);
 

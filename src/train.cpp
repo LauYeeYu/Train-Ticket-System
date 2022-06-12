@@ -64,6 +64,21 @@ std::ostream& operator<<(std::ostream& os, const Date& date) {
     return os;
 }
 
+Date& Date::operator-=(int rhs) {
+    day -= rhs;
+    return *this;
+}
+
+Date Date::operator-(int rhs) {
+    Date result = *this;
+    result -= rhs;
+    return result;
+}
+
+bool Date::operator!=(const Date& rhs) const {
+    return this->day != rhs.day;
+}
+
 bool Time::operator<(const Time& rhs) const {
     return this->minute < rhs.minute;
 }
@@ -112,4 +127,8 @@ Time::Time(const std::string& string) {
 std::ostream& operator<<(std::ostream& os, const Time& time) {
     os << (time.minute / 60) % 24 << ":" << time.minute % 60;
     return os;
+}
+
+bool Time::operator!=(const Time& rhs) const {
+    return this->minute != rhs.minute;
 }

@@ -7,6 +7,8 @@
 #include "fixed_string.h"
 #include "user.h"
 #include "utility.h"
+#include "train.h"
+#include "train_manage.h"
 
 bool LoginPool::Contains(const std::string& name) {
     return loginUserMap_.Contains(static_cast<FixedString<20>>(name));
@@ -164,4 +166,21 @@ void UserManage::Modify(ParameterTable& input, long timeStamp) {
 
     std::cout << user.userName << " " << user.name << " "
               << user.mailAddress << " " << user.privilege << ENDL;
+}
+
+long UserManage::AddOrder(const std::string& name, Ticket& ticket,
+                          long timeStamp, TrainManage& trainManage) {
+    if (!userIndex_.Contains(ToHashPair(name))) {
+        return -1;
+    }
+    long position = userIndex_.Find();
+    User user = userData_.Get(position);
+    ticket.last = user.orderInfo;
+    user.orderInfo = trainManage.AddOrder(ticket, timeStamp);
+    userData_.Modify(position, user);
+    return user.orderInfo;
+}
+
+bool UserManage::Logged(const std::string& name) {
+    return loginPool_.Contains(name);
 }
