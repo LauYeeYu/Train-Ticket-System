@@ -28,13 +28,8 @@ int StringToInt(const std::string& string) {
     return result;
 }
 
-HashPair ToHashPair(const FixedString<20>& string) {
-    return HashPair(HashPair(FixedStringHash1()(string),
-                             FixedStringHash2()(string)));
-}
-
 
 HashPair ToHashPair(const std::string& string) {
-    return HashPair(HashPair(FixedStringHash1()(string),
-                             FixedStringHash2()(string)));
+    return HashPair(FixedStringHash1()(string),
+                    FixedStringHash2()(string));
 }

@@ -194,7 +194,12 @@ private:
     constexpr static std::size_t kPrime_ = 1e9 + 9;
 };
 
-HashPair ToHashPair(const FixedString<20>& string);
+template<long size>
+HashPair ToHashPair(const FixedString<size>& string) {
+    return HashPair(FixedStringHash1()(string),
+                    FixedStringHash2()(string));
+}
+
 HashPair ToHashPair(const std::string& string);
 
 class Hash {

@@ -22,10 +22,11 @@
 #include "linked_hash_map.h"
 #include "parameter_table.h"
 #include "tile_storage.h"
+#include "train.h"
 #include "user.h"
 #include "utility.h"
 
-int StringToInt(const std::string& string);
+class TrainManage;
 
 class LoginPool {
 public:
@@ -75,9 +76,7 @@ public:
 
     long LastOrder(const std::string& name);
 
-    long AddOrder(const std::string& name, long position, long timeStamp);
-
-    long ModifyLastOrderPtr(long position, long timeStamp);
+    long AddOrder(const std::string& name, Ticket& ticket, long timeStamp, TrainManage& trainManage);
 
     void RollBack(long time);
 

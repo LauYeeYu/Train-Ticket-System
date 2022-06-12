@@ -1086,6 +1086,7 @@ public:
     template<class K>
     bool Contains(const K& key) const { return table_.Contains(key); }
 
+    void ReserveAtLeast(SizeT size) { table_.ReserveAtLeast(size); }
 
     /**
      * Finds an element with key equivalent to key.

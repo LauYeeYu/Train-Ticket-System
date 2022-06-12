@@ -32,8 +32,13 @@ struct Date {
     bool operator<(const Date& rhs) const;
     bool operator>(const Date& rhs) const;
     bool operator==(const Date& rhs) const;
+    bool operator!=(const Date& rhs) const;
     Date& operator+=(int rhs);
     Date operator+(int rhs);
+    Date& operator-=(int rhs);
+    Date operator-(int rhs);
+
+    friend std::ostream& operator<<(std::ostream& os, const Date& date);
 
     int day;
 };
@@ -46,11 +51,14 @@ struct Time {
     bool operator<(const Time& rhs) const;
     bool operator>(const Time& rhs) const;
     bool operator==(const Time& rhs) const;
+    bool operator!=(const Time& rhs) const;
     Time& operator+=(const Time& rhs);
     Time operator-(const Time& rhs);
     Time operator+(const Time& rhs);
     Time& operator+=(int rhs);
     Time operator+(int rhs);
+
+    friend std::ostream& operator<<(std::ostream& os, const Time& time);
 
     int minute;
 };
@@ -58,8 +66,7 @@ struct Time {
 struct Train {
     TrainID trainID;
     Station stations[101];
-    long queueFirst = -1;
-    long queueLast = -1;
+    long ticketData = -1;
     int  stationNum;
     int  seatNum;
     int  prefixPriceSum[101];
@@ -67,13 +74,34 @@ struct Train {
     Time arrivalTime[101];
     Date startDate, endDate;
     char type;
-    bool status = false; // Indicate whether the train is released or not
+    bool released = false; // Indicate whether the train is released or not
+};
+
+struct Journey {
+    TrainID trainID;
+    Station startStation;
+    Station endStation;
+    Date startDate;
+    Time startTime;
+    Date endDate;
+    Time endTime;
+    int price;
+    int seat;
+
+    friend std::ostream& operator<<(std::ostream& os, const Journey& journey) {
+        os << journey.trainID << " " << journey.startStation << " "
+           << journey.startDate << " " << journey.startTime << " -> "
+           << journey.endStation << " " << journey.endDate << " "
+           << journey.endTime << " " << journey.price << " " << journey.seat;
+        return os;
+    }
 };
 
 struct Ticket {
     long trainPosition;
-    int  number;
+    int  index;
     int  price;
+    int  seatNum;
     int  from, to;
     int  state; // 1 for bought, 0 for queuing, -1 for refunded
     long last = -1; // the last query
@@ -81,7 +109,7 @@ struct Ticket {
 };
 
 struct TrainTicketCount {
-    int remained[100];
+    int remained[100][100];
 };
 
 #endif // TICKET_SYSTEM_INCLUDE_TRAIN_H
