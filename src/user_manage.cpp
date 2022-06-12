@@ -178,9 +178,16 @@ long UserManage::AddOrder(const std::string& name, Ticket& ticket,
     ticket.last = user.orderInfo;
     user.orderInfo = trainManage.AddOrder(ticket, timeStamp);
     userData_.Modify(position, user);
+    if (loginPool_.Contains(name)) {
+        loginPool_.ModifyProfile(user);
+    }
     return user.orderInfo;
 }
 
 bool UserManage::Logged(const std::string& name) {
     return loginPool_.Contains(name);
+}
+
+const User& UserManage::GetUser(const std::string& name) {
+    return loginPool_.GetData(name);
 }

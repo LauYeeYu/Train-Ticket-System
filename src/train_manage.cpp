@@ -284,6 +284,13 @@ void TrainManage::TryBuy(ParameterTable& input, UserManage& userManage, long tim
         }
         ticketData_.Modify(train.ticketData, ticketCount);
         Ticket ticket;
+        ticket.trainID = train.trainID;
+        ticket.startStation = train.stations[departure];
+        ticket.endStation = train.stations[arrival];
+        ticket.startDate = date;
+        ticket.endDate = trainDate + train.arrivalTime[arrival].minute / 1440;
+        ticket.startTime = train.departureTime[departure];
+        ticket.endTime = train.arrivalTime[arrival];
         ticket.trainPosition = position;
         ticket.index = trainDate.day;
         ticket.price = train.prefixPriceSum[arrival] - train.prefixPriceSum[departure];
@@ -298,6 +305,13 @@ void TrainManage::TryBuy(ParameterTable& input, UserManage& userManage, long tim
             std::cout << "[" << timeStamp << "] -1" << ENDL;
         } else {
             Ticket ticket;
+            ticket.trainID = train.trainID;
+            ticket.startStation = train.stations[departure];
+            ticket.endStation = train.stations[arrival];
+            ticket.startDate = date;
+            ticket.endDate = trainDate + train.arrivalTime[arrival].minute / 1440;
+            ticket.startTime = train.departureTime[departure];
+            ticket.endTime = train.arrivalTime[arrival];
             ticket.trainPosition = position;
             ticket.index = trainDate.day;
             ticket.price = train.prefixPriceSum[arrival] - train.prefixPriceSum[departure];
@@ -318,4 +332,22 @@ void TrainManage::TryBuy(ParameterTable& input, UserManage& userManage, long tim
 
 long TrainManage::AddOrder(Ticket& ticket, long timeStamp) {
     return userTicketData_.Add(ticket);
+}
+
+void TrainManage::QueryOrder(ParameterTable& input, UserManage& userManage, long timeStamp) {
+    if (!userManage.Logged(input['u'])) {
+        std::cout << "[" << timeStamp << "] -1" << ENDL;
+        return;
+    }
+
+    long OrderPtr = userManage.GetUser(input['u']).orderInfo;
+    Vector<Ticket> tickets;
+    while (OrderPtr != -1) {
+        tickets.PushBack(userTicketData_.Get(OrderPtr));
+        OrderPtr = tickets.Back().last;
+    }
+    std::cout << "[" << timeStamp << "] " << tickets.Size() << ENDL;
+    for (auto& i : tickets) {
+        std::cout << i << ENDL;
+    }
 }

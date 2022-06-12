@@ -98,6 +98,13 @@ struct Journey {
 };
 
 struct Ticket {
+    TrainID trainID;
+    Station startStation;
+    Station endStation;
+    Date startDate;
+    Time startTime;
+    Date endDate;
+    Time endTime;
     long trainPosition;
     int  index;
     int  price;
@@ -106,6 +113,20 @@ struct Ticket {
     int  state; // 1 for bought, 0 for queuing, -1 for refunded
     long last = -1; // the last query
     long queue = -1; // the next queuing order
+    friend std::ostream& operator<<(std::ostream& os, const Ticket& ticket) {
+        if (ticket.state == 1) {
+            os << "[success] ";
+        } else if (ticket.state == 0) {
+            os << "[pending] ";
+        } else {
+            os << "[refunded] ";
+        }
+        os << ticket.trainID << " " << ticket.startStation << " "
+           << ticket.startDate << " " << ticket.startTime << " -> "
+           << ticket.endStation << " " << ticket.endDate << " "
+           << ticket.endTime << " " << ticket.price << " " << ticket.seatNum;
+        return os;
+    }
 };
 
 struct TrainTicketCount {
