@@ -50,7 +50,7 @@ public:
 
     void QueryOrder(ParameterTable& input, UserManage& userManage, long timeStamp);
 
-    void Refund(ParameterTable& input, long timeStamp);
+    void Refund(ParameterTable& input, UserManage& userManage, long timeStamp);
 
     //void RollBack(long timeStamp);
 

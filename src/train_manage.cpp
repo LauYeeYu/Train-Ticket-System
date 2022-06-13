@@ -22,6 +22,15 @@
 #include "utility"
 #include "vector.h"
 
+bool CanBuyTicket(const TrainTicketCount& ticketCount, int day, int from, int to, int count) {
+    for (int i = from; i < to; ++i) {
+        if (ticketCount.remained[day][i] < count) {
+            return false;
+        }
+    }
+    return true;
+}
+
 void TrainManage::Add(ParameterTable& input, long timeStamp) {
     Train train;
     train.trainID = input['i'];
@@ -169,6 +178,7 @@ void TrainManage::QueryTrain(ParameterTable& input, long timeStamp) {
 void TrainManage::QueryTicket(ParameterTable& input, long timeStamp) {
     auto start = stationIndex_.MultiFind(ToHashPair(input['s']));
     auto end = stationIndex_.MultiFind(ToHashPair(input['t']));
+    Date date(input['d']);
     LinkedHashMap<long, long> ticketIndex;
     ticketIndex.ReserveAtLeast(512);
     Vector<Journey> journeys;
@@ -178,23 +188,22 @@ void TrainManage::QueryTicket(ParameterTable& input, long timeStamp) {
     for (auto& i : end) {
         if (ticketIndex.Contains(i.first) && ticketIndex[i.first] < i.second) {
             Train train = trainData_.Get(i.first);
-            Date date(input['d']);
-            date -= train.departureTime[ticketIndex[i.first]].minute / 1440;
-            if (date < train.startDate || date > train.endDate) {
+            int tmpDate = date.day - train.departureTime[ticketIndex[i.first]].minute / 1440;
+            if (tmpDate < train.startDate.day || tmpDate > train.endDate.day) {
                 continue;
             }
             TrainTicketCount ticketCount = ticketData_.Get(train.ticketData);
-            int ticketNum = ticketCount.remained[date.day][ticketIndex[i.first]];
+            int ticketNum = ticketCount.remained[tmpDate][ticketIndex[i.first]];
             for (int j = ticketIndex[i.first] + 1; j < train.stationNum; ++j) {
-                ticketNum = std::min(ticketNum,ticketCount.remained[date.day][j]);
+                ticketNum = std::min(ticketNum,ticketCount.remained[tmpDate][j]);
             }
             Journey journey;
             journey.trainID = train.trainID;
             journey.startStation = train.stations[ticketIndex[i.first]];
             journey.endStation = train.stations[i.second];
-            journey.startDate = date + train.departureTime[ticketIndex[i.first]].minute / 1440;
+            journey.startDate.day = tmpDate + train.departureTime[ticketIndex[i.first]].minute / 1440;
             journey.startTime = train.departureTime[ticketIndex[i.first]];
-            journey.endDate = date + train.arrivalTime[i.second].minute / 1440;
+            journey.endDate.day = tmpDate + train.arrivalTime[i.second].minute / 1440;
             journey.endTime = train.arrivalTime[i.second];
             journey.price = train.prefixPriceSum[i.second] - train.prefixPriceSum[ticketIndex[i.first]];
             journey.seat = ticketNum;
@@ -292,6 +301,7 @@ void TrainManage::TryBuy(ParameterTable& input, UserManage& userManage, long tim
         ticket.startTime = train.departureTime[departure];
         ticket.endTime = train.arrivalTime[arrival];
         ticket.trainPosition = position;
+        ticket.ticketPosition = train.ticketData;
         ticket.index = trainDate.day;
         ticket.price = train.prefixPriceSum[arrival] - train.prefixPriceSum[departure];
         ticket.from = departure;
@@ -313,6 +323,7 @@ void TrainManage::TryBuy(ParameterTable& input, UserManage& userManage, long tim
             ticket.startTime = train.departureTime[departure];
             ticket.endTime = train.arrivalTime[arrival];
             ticket.trainPosition = position;
+            ticket.ticketPosition = train.ticketData;
             ticket.index = trainDate.day;
             ticket.price = train.prefixPriceSum[arrival] - train.prefixPriceSum[departure];
             ticket.from = departure;
@@ -323,7 +334,10 @@ void TrainManage::TryBuy(ParameterTable& input, UserManage& userManage, long tim
             if (ticketCount.remained[98][trainDate.day] == -1) {
                 ticketCount.remained[98][trainDate.day] = ticketCount.remained[99][trainDate.day];
             }
-            ticketData_.Modify(train.ticketData, ticketCount);
+            long ticketPtr = userManage.AddOrder(input['u'], ticket, timeStamp, *this);;
+            Ticket queueTicket = userTicketData_.Get(ticketCount.remained[99][trainDate.day]);
+            queueTicket.queue = ticketPtr;
+            userTicketData_.Modify(ticketCount.remained[99][trainDate.day], queueTicket);
             std::cout << "[" << timeStamp << "] queue" << ENDL;
         }
     }
@@ -358,4 +372,242 @@ void TrainManage::Clear() {
     ticketData_.Clear();
     userTicketData_.Clear();
     stationIndex_.Clear();
+}
+
+void TrainManage::Refund(ParameterTable& input, UserManage& userManage, long timeStamp) {
+    if (!userManage.Logged(input['u'])) {
+        std::cout << "[" << timeStamp << "] -1" << ENDL;
+        return;
+    }
+
+    // Get the pointer to the order
+    long orderPtr = userManage.GetUser(input['u']).orderInfo;
+    int number;
+    if (input['n'].empty()) number = 1;
+    else number = StringToInt(input['n']);
+    Ticket ticket;
+    ticket = userTicketData_.Get(orderPtr);
+    if (ticket.state == 1) --number;
+    while (number > 0) {
+        orderPtr = ticket.last;
+        if (orderPtr == -1) {
+            std::cout << "[" << timeStamp << "] -1" << ENDL;
+            return;
+        }
+        ticket = userTicketData_.Get(orderPtr);
+        if (ticket.state == 1) --number;
+    }
+
+    // Refund the ticket
+    ticket.state = -1;
+    userTicketData_.Modify(orderPtr, ticket);
+    TrainTicketCount ticketCount = ticketData_.Get(ticket.ticketPosition);
+    for (int i = ticket.from; i < ticket.to; ++i) {
+        ticketCount.remained[ticket.index][i] += ticket.seatNum;
+    }
+
+    // check the pending queue
+    long queuePtr = ticketCount.remained[98][ticket.index];
+    long nextPtr;
+    // Nothing to pend
+    if (queuePtr == -1) {
+        ticketData_.Modify(ticket.ticketPosition, ticketCount);
+        std::cout << "[" << timeStamp << "] 0" << ENDL;
+        return;
+    }
+    ticket = userTicketData_.Get(queuePtr);
+
+    // the case that the head nodes can be served
+    while (CanBuyTicket(ticketCount, ticket.index, ticket.from, ticket.to, ticket.seatNum)) {
+        ticket.state = 1;
+        nextPtr = ticket.queue;
+        ticket.queue = -1;
+        userTicketData_.Modify(queuePtr, ticket);
+        for (int i = ticket.from; i < ticket.to; ++i) {
+            ticketCount.remained[ticket.index][i] -= ticket.seatNum;
+        }
+        queuePtr = nextPtr;
+        if (queuePtr == -1) {
+            ticketCount.remained[98][ticket.index] = -1;
+            ticketCount.remained[99][ticket.index] = -1;
+            ticketData_.Modify(ticket.ticketPosition, ticketCount);
+            std::cout << "[" << timeStamp << "] 0" << ENDL;
+            return;
+        }
+        ticket = userTicketData_.Get(queuePtr);
+    }
+    ticketCount.remained[98][ticket.index] = queuePtr;
+
+    // this node cannot be served, so we need to move to the next node
+    long lastPtr = queuePtr;
+    queuePtr = ticket.queue;
+
+    while (queuePtr != -1) {
+        ticket = userTicketData_.Get(queuePtr);
+        if (CanBuyTicket(ticketCount, ticket.index, ticket.from, ticket.to, ticket.seatNum)) {
+            ticket.state = 1;
+            nextPtr = ticket.queue;
+            ticket.queue = -1;
+            userTicketData_.Modify(queuePtr, ticket);
+            for (int i = ticket.from; i < ticket.to; ++i) {
+                ticketCount.remained[ticket.index][i] -= ticket.seatNum;
+            }
+            queuePtr = nextPtr;
+        } else {
+            lastPtr = queuePtr;
+            queuePtr = ticket.queue;
+        }
+    }
+    ticketCount.remained[99][ticket.index] = lastPtr;
+    ticketData_.Modify(ticket.ticketPosition, ticketCount);
+}
+
+void TrainManage::QueryTransfer(ParameterTable& input, long timeStamp) {
+    Vector<Train> trains; // train2
+    bool Found = false;
+    int cost = 0, time = 0;
+    Journey journey1, journey2;
+    Vector<HashPair> stationHash;
+    stationHash.Resize(101);
+
+    auto start = stationIndex_.MultiFind(ToHashPair(input['s']));
+    auto end = stationIndex_.MultiFind(ToHashPair(input['t']));
+    Date date(input['d']);
+    bool rule; // true for time, false for cost
+    if (input['p'].empty() || input['p'][0] == 't') rule = true;
+    else rule = false;
+
+    auto* stations2 = new LinkedHashMap<HashPair, long, HashPairHash>[end.Size()];
+    for (int i = 0; i < end.Size(); ++i) {
+        trains.PushBack(trainData_.Get(end[i].first));
+        for (int j = 1; j < end[i].second; ++j) {
+            stations2[i][ToHashPair(trains.Back().stations[j])] = j;
+        }
+    }
+
+    for (auto& startPtr : start) {
+        Train train1 = trainData_.Get(startPtr.first);
+        int tmpDate = date.day - train1.departureTime[startPtr.second].minute / 1440;
+        if (tmpDate < train1.startDate.day || tmpDate > train1.endDate.day) continue;
+        TrainTicketCount ticketCount1 = ticketData_.Get(train1.ticketData);
+        int startDate = date.day - train1.departureTime[startPtr.second].minute / 1440;
+        int remained1 = ticketCount1.remained[startDate][startPtr.second];
+
+        for (int j = startPtr.second + 1; j <= train1.stationNum; ++j) {
+            stationHash[j] = ToHashPair(train1.stations[j]);
+        }
+        for (int train2 = 0; train2 < end.Size(); ++train2) {
+            if (end[train2].first == startPtr.first) continue; // eliminate the same train
+            for (int j = startPtr.second + 1; j <= train1.stationNum; ++j) {
+                remained1 = std::min(remained1, ticketCount1.remained[startDate][j - 1]);
+                if (!stations2[train2].Contains(stationHash[j])) continue;
+                int stationIndex2 = stations2[train2][stationHash[j]];
+                int day = date.day - train1.departureTime[startPtr.second].minute / 1440
+                          + train1.arrivalTime[j].minute / 1440;
+                // eliminate the wrong date
+                if (day > trains[train2].endDate.day) continue;
+                if (day == trains[train2].endDate.day &&
+                    train1.arrivalTime[j].minute % 1440 >
+                    trains[train2].departureTime[stationIndex2].minute % 1440) {
+                    continue;
+                }
+                int tmpCost, tmpTime, day2;
+                if (rule) {
+                    if (day < trains[train2].startDate.day
+                              + trains[train2].departureTime[stationIndex2].minute / 1440) {
+                        day2 = trains[train2].startDate.day
+                               + trains[train2].arrivalTime[end[train2].second].minute / 1440;
+                    } else if (train1.arrivalTime[j].minute % 1440 >
+                               trains[train2].departureTime[stationIndex2].minute % 1440) {
+                        day2 = day + 1
+                               + trains[train2].arrivalTime[end[train2].second].minute / 1440
+                               - trains[train2].departureTime[stationIndex2].minute / 1440;
+                    } else {
+                        day2 = day
+                               + trains[train2].arrivalTime[end[train2].second].minute / 1440
+                               - trains[train2].departureTime[stationIndex2].minute / 1440;
+                    }
+                    int dayCount = day2 - (day - train1.departureTime[startPtr.second].minute / 1440);
+                    tmpTime = dayCount * 1440 + train1.departureTime[startPtr.second].minute % 1440
+                              - train1.arrivalTime[end[train2].second].minute % 1440;
+                    if (Found && tmpTime > time) continue;
+                    tmpCost = train1.prefixPriceSum[j] - train1.prefixPriceSum[startPtr.second]
+                              + trains[train2].prefixPriceSum[end[train2].second]
+                              - trains[train2].prefixPriceSum[stationIndex2];
+                    if (Found) {
+                        if (tmpCost > cost) continue;
+                        if (tmpCost == cost) {
+                            if (journey1.trainID < train1.trainID) continue;
+                            if (journey1.trainID == train1.trainID &&
+                                journey2.trainID < trains[train2].trainID)
+                                continue;
+                        }
+                    }
+                } else {
+                    tmpCost = train1.prefixPriceSum[j] - train1.prefixPriceSum[startPtr.second]
+                              + trains[train2].prefixPriceSum[end[train2].second]
+                              - trains[train2].prefixPriceSum[stationIndex2];
+                    if (Found && tmpCost > cost) continue;
+                    if (day < trains[train2].startDate.day
+                              + trains[train2].departureTime[stationIndex2].minute / 1440) {
+                        day2 = trains[train2].startDate.day
+                               + trains[train2].arrivalTime[end[train2].second].minute / 1440;
+                    } else if (train1.arrivalTime[j].minute % 1440 >
+                               trains[train2].departureTime[stationIndex2].minute % 1440) {
+                        day2 = day + 1
+                               + trains[train2].arrivalTime[end[train2].second].minute / 1440
+                               - trains[train2].departureTime[stationIndex2].minute / 1440;
+                    } else {
+                        day2 = day
+                               + trains[train2].arrivalTime[end[train2].second].minute / 1440
+                               - trains[train2].departureTime[stationIndex2].minute / 1440;
+                    }
+                    int dayCount = day2 - (day - train1.departureTime[startPtr.second].minute / 1440);
+                    tmpTime = dayCount * 1440 + train1.departureTime[startPtr.second].minute % 1440
+                              - train1.arrivalTime[end[train2].second].minute % 1440;
+                    if (Found) {
+                        if (tmpTime > time) continue;
+                        if (tmpTime == time) {
+                            if (journey1.trainID < train1.trainID) continue;
+                            if (journey1.trainID == train1.trainID &&
+                                journey2.trainID < trains[train2].trainID)
+                                continue;
+                        }
+                    }
+                }
+                Found = true;
+                cost = tmpCost;
+                time = tmpTime;
+                journey1.trainID = train1.trainID;
+                journey1.startStation = train1.stations[startPtr.second];
+                journey1.endStation = train1.stations[j];
+                journey1.startTime = train1.departureTime[startPtr.second];
+                journey1.startDate.day = day - train1.arrivalTime[j].minute / 1440
+                                         + train1.departureTime[startPtr.second].minute / 1440;
+                journey1.endTime = train1.arrivalTime[j];
+                journey1.endDate.day = journey1.startDate.day;
+                journey1.price = train1.prefixPriceSum[j] - train1.prefixPriceSum[startPtr.second];
+                journey1.seat = remained1;
+
+                journey2.trainID = trains[train2].trainID;
+                journey2.startStation = trains[train2].stations[stationIndex2];
+                journey2.endStation = trains[train2].stations[end[train2].second];
+                journey2.startTime = trains[train2].departureTime[stationIndex2];
+                journey2.startDate.day = day2 - trains[train2].arrivalTime[end[train2].second].minute / 1440
+                                         + trains[train2].departureTime[stationIndex2].minute / 1440;
+                journey2.endTime = trains[train2].arrivalTime[end[train2].second];
+                journey2.endDate.day = day2;
+                journey2.price = trains[train2].prefixPriceSum[end[train2].second]
+                                 - trains[train2].prefixPriceSum[stationIndex2];
+                TrainTicketCount ticketCount2 = ticketData_.Get(trains[train2].ticketData);
+                int index2 = journey2.startDate.day - trains[train2].departureTime[stationIndex2].minute / 1440;
+                journey2.seat = ticketCount2.remained[index2][stationIndex2];
+                for (int k = stationIndex2 + 1; k < end[train2].second; ++k) {
+                    journey2.seat = std::min(journey2.seat, ticketCount2.remained[index2][k]);
+                }
+
+            }
+        }
+    }
+    delete[] stations2;
 }

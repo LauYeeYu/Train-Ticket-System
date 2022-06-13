@@ -106,6 +106,7 @@ struct Ticket {
     Date endDate;
     Time endTime;
     long trainPosition;
+    long ticketPosition;
     int  index;
     int  price;
     int  seatNum;
