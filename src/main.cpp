@@ -29,6 +29,12 @@ void Init();
 bool Request(ParameterTable& parameterTable, UserManage& users, TrainManage& trains);
 
 int main() {
+#ifdef BOOST
+    std::ios::sync_with_stdio(false);
+    std::cin.tie(nullptr);
+    std::cout.tie(nullptr);
+#endif // BOOST
+
     Init();
     ParameterTable parameterTable;
     TrainManage trainManage;
@@ -97,7 +103,6 @@ void Init() {
     TryCreateFile("train_index");
     TryCreateFile("train_data");
     TryCreateFile("ticket_index");
-    TryCreateFile("start_station_index");
-    TryCreateFile("terminal_station_index");
+    TryCreateFile("station_index");
     TryCreateFile("user_ticket_data");
 }
