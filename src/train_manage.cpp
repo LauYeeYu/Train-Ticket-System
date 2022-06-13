@@ -22,6 +22,15 @@
 #include "utility"
 #include "vector.h"
 
+bool CanBuyTicket(const TrainTicketCount& ticketCount, int day, int from, int to, int count) {
+    for (int i = from; i < to; ++i) {
+        if (ticketCount.remained[day][i] < count) {
+            return false;
+        }
+    }
+    return true;
+}
+
 void TrainManage::Add(ParameterTable& input, long timeStamp) {
     Train train;
     train.trainID = input['i'];
@@ -292,6 +301,7 @@ void TrainManage::TryBuy(ParameterTable& input, UserManage& userManage, long tim
         ticket.startTime = train.departureTime[departure];
         ticket.endTime = train.arrivalTime[arrival];
         ticket.trainPosition = position;
+        ticket.ticketPosition = train.ticketData;
         ticket.index = trainDate.day;
         ticket.price = train.prefixPriceSum[arrival] - train.prefixPriceSum[departure];
         ticket.from = departure;
@@ -313,6 +323,7 @@ void TrainManage::TryBuy(ParameterTable& input, UserManage& userManage, long tim
             ticket.startTime = train.departureTime[departure];
             ticket.endTime = train.arrivalTime[arrival];
             ticket.trainPosition = position;
+            ticket.ticketPosition = train.ticketData;
             ticket.index = trainDate.day;
             ticket.price = train.prefixPriceSum[arrival] - train.prefixPriceSum[departure];
             ticket.from = departure;
@@ -323,7 +334,10 @@ void TrainManage::TryBuy(ParameterTable& input, UserManage& userManage, long tim
             if (ticketCount.remained[98][trainDate.day] == -1) {
                 ticketCount.remained[98][trainDate.day] = ticketCount.remained[99][trainDate.day];
             }
-            ticketData_.Modify(train.ticketData, ticketCount);
+            long ticketPtr = userManage.AddOrder(input['u'], ticket, timeStamp, *this);;
+            Ticket queueTicket = userTicketData_.Get(ticketCount.remained[99][trainDate.day]);
+            queueTicket.queue = ticketPtr;
+            userTicketData_.Modify(ticketCount.remained[99][trainDate.day], queueTicket);
             std::cout << "[" << timeStamp << "] queue" << ENDL;
         }
     }
@@ -358,4 +372,92 @@ void TrainManage::Clear() {
     ticketData_.Clear();
     userTicketData_.Clear();
     stationIndex_.Clear();
+}
+
+void TrainManage::Refund(ParameterTable& input, UserManage& userManage, long timeStamp) {
+    if (!userManage.Logged(input['u'])) {
+        std::cout << "[" << timeStamp << "] -1" << ENDL;
+        return;
+    }
+
+    // Get the pointer to the order
+    long orderPtr = userManage.GetUser(input['u']).orderInfo;
+    int number;
+    if (input['n'].empty()) number = 1;
+    else number = StringToInt(input['n']);
+    Ticket ticket;
+    ticket = userTicketData_.Get(orderPtr);
+    if (ticket.state == 1) --number;
+    while (number > 0) {
+        orderPtr = ticket.last;
+        if (orderPtr == -1) {
+            std::cout << "[" << timeStamp << "] -1" << ENDL;
+            return;
+        }
+        ticket = userTicketData_.Get(orderPtr);
+        if (ticket.state == 1) --number;
+    }
+
+    // Refund the ticket
+    ticket.state = -1;
+    userTicketData_.Modify(orderPtr, ticket);
+    TrainTicketCount ticketCount = ticketData_.Get(ticket.ticketPosition);
+    for (int i = ticket.from; i < ticket.to; ++i) {
+        ticketCount.remained[ticket.index][i] += ticket.seatNum;
+    }
+
+    // check the pending queue
+    long queuePtr = ticketCount.remained[98][ticket.index];
+    long nextPtr;
+    // Nothing to pend
+    if (queuePtr == -1) {
+        ticketData_.Modify(ticket.ticketPosition, ticketCount);
+        std::cout << "[" << timeStamp << "] 0" << ENDL;
+        return;
+    }
+    ticket = userTicketData_.Get(queuePtr);
+
+    // the case that the head nodes can be served
+    while (CanBuyTicket(ticketCount, ticket.index, ticket.from, ticket.to, ticket.seatNum)) {
+        ticket.state = 1;
+        nextPtr = ticket.queue;
+        ticket.queue = -1;
+        userTicketData_.Modify(queuePtr, ticket);
+        for (int i = ticket.from; i < ticket.to; ++i) {
+            ticketCount.remained[ticket.index][i] -= ticket.seatNum;
+        }
+        queuePtr = nextPtr;
+        if (queuePtr == -1) {
+            ticketCount.remained[98][ticket.index] = -1;
+            ticketCount.remained[99][ticket.index] = -1;
+            ticketData_.Modify(ticket.ticketPosition, ticketCount);
+            std::cout << "[" << timeStamp << "] 0" << ENDL;
+            return;
+        }
+        ticket = userTicketData_.Get(queuePtr);
+    }
+    ticketCount.remained[98][ticket.index] = queuePtr;
+
+    // this node cannot be served, so we need to move to the next node
+    long lastPtr = queuePtr;
+    queuePtr = ticket.queue;
+
+    while (queuePtr != -1) {
+        ticket = userTicketData_.Get(queuePtr);
+        if (CanBuyTicket(ticketCount, ticket.index, ticket.from, ticket.to, ticket.seatNum)) {
+            ticket.state = 1;
+            nextPtr = ticket.queue;
+            ticket.queue = -1;
+            userTicketData_.Modify(queuePtr, ticket);
+            for (int i = ticket.from; i < ticket.to; ++i) {
+                ticketCount.remained[ticket.index][i] -= ticket.seatNum;
+            }
+            queuePtr = nextPtr;
+        } else {
+            lastPtr = queuePtr;
+            queuePtr = ticket.queue;
+        }
+    }
+    ticketCount.remained[99][ticket.index] = lastPtr;
+    ticketData_.Modify(ticket.ticketPosition, ticketCount);
 }
