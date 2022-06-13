@@ -68,16 +68,25 @@ void UserManage::AddUser(ParameterTable& input) {
         user.mailAddress = input['m'];
         user.privilege = 10;
         Adduser_(user, input.TimeStamp());
+        std::cout << "[" << input.TimeStamp() << "] 0" << ENDL;
         return;
     }
 
-    if (!loginPool_.Contains(input['c'])) return;
-    if (user.privilege > loginPool_.GetData(input['c']).privilege) return;
+    if (!loginPool_.Contains(input['c'])) {
+        std::cout << "[" << input.TimeStamp() << "] -1" << ENDL;
+        return;
+    }
+    if (user.privilege > loginPool_.GetData(input['c']).privilege) {
+        std::cout << "[" << input.TimeStamp() << "] -1" << ENDL;
+        return;
+    }
 
     user.userName = input['u'];
     user.password = ToHashPair(input['p']);
     user.name = input['n'];
     user.mailAddress = input['m'];
+
+    std::cout << "[" << input.TimeStamp() << "] 0" << ENDL;
 }
 
 void UserManage::Adduser_(User& user, long timeStamp) {
