@@ -42,7 +42,45 @@ int main() {
     return 0;
 }
 
-bool Request(ParameterTable& parameterTable, UserManage& users, TrainManage& trains);
+bool Request(ParameterTable& parameterTable, UserManage& users, TrainManage& trains) {
+    if (parameterTable.GetCommand() == "add_user") {
+        users.AddUser(parameterTable);
+    } else if (parameterTable.GetCommand() == "login") {
+        users.Login(parameterTable);
+    } else if (parameterTable.GetCommand() == "logout") {
+        users.Logout(parameterTable);
+    } else if (parameterTable.GetCommand() == "query_profile") {
+        users.Query(parameterTable);
+    } else if (parameterTable.GetCommand() == "modify_profile") {
+        users.Modify(parameterTable);
+    } else if (parameterTable.GetCommand() == "add_train") {
+        trains.Add(parameterTable);
+    } else if (parameterTable.GetCommand() == "delete_train") {
+        trains.Delete(parameterTable);
+    } else if (parameterTable.GetCommand() == "release_train") {
+        trains.Release(parameterTable);
+    } else if (parameterTable.GetCommand() == "query_train") {
+        trains.QueryTrain(parameterTable);
+    } else if (parameterTable.GetCommand() == "query_ticket") {
+        trains.QueryTicket(parameterTable);
+    } else if (parameterTable.GetCommand() == "query_transfer") {
+        trains.QueryTransfer(parameterTable);
+    } else if (parameterTable.GetCommand() == "buy_ticket") {
+        trains.TryBuy(parameterTable, users);
+    } else if (parameterTable.GetCommand() == "query_order") {
+        trains.QueryOrder(parameterTable, users);
+    } else if (parameterTable.GetCommand() == "refund_ticket") {
+        trains.Refund(parameterTable, users);
+    } else if (parameterTable.GetCommand() == "rollback") {
+        // NOT SUPPORTED AT THIS MOMENT
+    } else if (parameterTable.GetCommand() == "clean") {
+        users.Clear();
+        trains.Clear();
+    } else if (parameterTable.GetCommand() == "exit") {
+        return false;
+    }
+    return true;
+}
 
 void TryCreateFile(const char* fileName) {
     std::ifstream tester(fileName);
