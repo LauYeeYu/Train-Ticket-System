@@ -487,7 +487,7 @@ void TrainManage::QueryTransfer(ParameterTable& input) {
         }
     }
 
-    for (auto& startPtr : start) {
+    for (auto& startPtr: start) {
         Train train1 = trainData_.Get(startPtr.first);
         int tmpDate = date.day - train1.departureTime[startPtr.second].minute / 1440;
         if (tmpDate < train1.startDate.day || tmpDate > train1.endDate.day) continue;
@@ -618,4 +618,5 @@ void TrainManage::QueryTransfer(ParameterTable& input) {
                   << journey2 << ENDL;
     } else {
         std::cout << "[" << input.TimeStamp() << "] 0" << ENDL;
+    }
 }

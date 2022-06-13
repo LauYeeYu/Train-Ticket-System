@@ -61,7 +61,7 @@ public:
     bool operator()(const HashPair& pair) const {
         return pair.first ^ pair.second;
     }
-}
+};
 
 int StringToInt(const std::string& string);
 

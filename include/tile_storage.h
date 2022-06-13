@@ -78,6 +78,10 @@ public:
         memcpy(data, &newValue, sizeof(T));
     }
 
+    void Clear() {
+        memoryManager_.Clear();
+    }
+
 private:
     MemoryManager<sizeof(T)> memoryManager_;
 };
