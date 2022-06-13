@@ -21,6 +21,7 @@
 #include <functional>
 
 #include "memory.h"
+#include "vector.h"
 #include "utility.h"
 
 template <class KeyT, class ValT,
@@ -89,7 +90,7 @@ private:
             }
         }
 
-        std::basic_string<ValT> MultiFind_(const KeyT &key, BPTree* tree) {
+        Vector<ValT> MultiFind_(const KeyT &key, BPTree* tree) {
             int x = Locate(key, tree);
             char *to = tree -> memo.ReadNode(child[x]);
             if (reinterpret_cast<Node*>(to) -> isleaf) {
@@ -317,14 +318,14 @@ private:
             }
         }
 
-        std::basic_string<ValT> MultiFind_(const KeyT &key, BPTree* tree) {
+        Vector<ValT> MultiFind_(const KeyT &key, BPTree* tree) {
             int x = Locate(key, tree);
-            std::basic_string<ValT> ret;
+            Vector<ValT> ret;
             LeafNode* cur = this;
             while (1) {
                 while (x < cur -> siz) {
                     if (tree -> keyEq(key, cur -> keys[x])) {
-                        ret.push_back(cur -> vals[x++]);
+                        ret.PushBack(cur -> vals[x++]);
                     } else {
                         return ret;
                     }
@@ -440,9 +441,9 @@ private:
         }
     }
 
-    std::basic_string<ValT> MultiFind_(const KeyT &key) {
+    Vector<ValT> MultiFind_(const KeyT &key) {
         if (root == -1) {
-            return std::basic_string<ValT>();
+            return Vector<ValT>();
         }
         char *tmp = memo.ReadNode(root);
         if (reinterpret_cast<Node*>(tmp) -> isleaf) {
@@ -547,11 +548,20 @@ public:
     BPTree(const char* filename): memo(filename) {
         root = -1;
         head = -1;
+        //TODO: meta
     }
-    ~BPTree() {}
+    ~BPTree() {
+        //TODO: meta
+    }
 
     bool Empty() {
         return root == -1;
+    }
+
+    void Clear() {
+        memo.Clear();
+        root = -1;
+        head = -1;
     }
 
     bool Contains(const KeyT &key) {
@@ -562,7 +572,7 @@ public:
         return lastVis;
     }
 
-    std::basic_string<ValT> MultiFind(const KeyT &key) {
+    Vector<ValT> MultiFind(const KeyT &key) {
         return MultiFind_(key);
     }
 

@@ -77,6 +77,16 @@ public:
         trash_head = nullptr;
     }
 
+    void Clear() {
+        mp.Clear();
+        for (MemNode* p = head; p != nullptr;) {
+            MemNode* q = p -> nxt;
+            delete p;
+            p = q;
+        }
+        head = rear = nullptr;
+    }
+
     MemNode* findMemory() {
         MemNode* cur = nullptr;
         if (mp.Size() >= kLimit) {
