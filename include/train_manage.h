@@ -48,11 +48,11 @@ public:
 
     long AddOrder(Ticket& ticket, long timeStamp);
 
-    void QueryOrder(ParameterTable& input);
+    void QueryOrder(ParameterTable& input, UserManage& userManage, long timeStamp);
 
     void Refund(ParameterTable& input, long timeStamp);
 
-    void RollBack(long timeStamp);
+    //void RollBack(long timeStamp);
 
     void Clear();
 

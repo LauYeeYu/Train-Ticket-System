@@ -74,13 +74,13 @@ public:
 
     bool Logged(const std::string& name);
 
-    long LastOrder(const std::string& name);
-
     long AddOrder(const std::string& name, Ticket& ticket, long timeStamp, TrainManage& trainManage);
 
-    void RollBack(long time);
+    //void RollBack(long time);
 
     void Clear();
+
+    const User& GetUser(const std::string& name);
 
 private:
     void Adduser_(User& user, long timeStamp);

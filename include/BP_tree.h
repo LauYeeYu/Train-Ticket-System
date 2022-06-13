@@ -17,7 +17,6 @@
 #ifndef TICKET_SYSTEM_INCLUDE_BP_TREE_H
 #define TICKET_SYSTEM_INCLUDE_BP_TREE_H
 
-#include <iostream>
 #include <functional>
 
 #include "memory.h"
