@@ -62,7 +62,7 @@ public:
 
     ~UserManage() = default;
 
-    void Adduser(ParameterTable& input, long timeStamp);
+    void AddUser(ParameterTable& input);
 
     void Login(ParameterTable& input);
 
@@ -70,7 +70,7 @@ public:
 
     void Query(ParameterTable& input);
 
-    void Modify(ParameterTable& input, long timeStamp);
+    void Modify(ParameterTable& input);
 
     bool Logged(const std::string& name);
 

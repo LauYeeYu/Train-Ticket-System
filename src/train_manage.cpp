@@ -31,11 +31,11 @@ bool CanBuyTicket(const TrainTicketCount& ticketCount, int day, int from, int to
     return true;
 }
 
-void TrainManage::Add(ParameterTable& input, long timeStamp) {
+void TrainManage::Add(ParameterTable& input) {
     Train train;
     train.trainID = input['i'];
     if (trainIndex_.Contains(ToHashPair(train.trainID))) {
-        std::cout << "[" << timeStamp << "] -1" << ENDL;
+        std::cout << "[" << input.TimeStamp() << "] -1" << ENDL;
     }
     train.stationNum = StringToInt(input['n']);
     train.seatNum = StringToInt(input['m']);
@@ -74,12 +74,12 @@ void TrainManage::Add(ParameterTable& input, long timeStamp) {
 
     long position = trainData_.Add(train);
     trainIndex_.Insert(ToHashPair(train.trainID), position);
-    std::cout << "[" << timeStamp << "] 0" << ENDL;
+    std::cout << "[" << input.TimeStamp() << "] 0" << ENDL;
 }
 
-void TrainManage::Delete(ParameterTable& input, long timeStamp) {
+void TrainManage::Delete(ParameterTable& input) {
     if (!trainIndex_.Contains(ToHashPair(input['i']))) {
-        std::cout << "[" << timeStamp << "] -1" << ENDL;
+        std::cout << "[" << input.TimeStamp() << "] -1" << ENDL;
         return;
     }
     long position = trainIndex_.Find();
@@ -87,16 +87,16 @@ void TrainManage::Delete(ParameterTable& input, long timeStamp) {
     trainIndex_.Erase(ToHashPair(input['i']));
 }
 
-void TrainManage::Release(ParameterTable& input, long timeStamp) {
+void TrainManage::Release(ParameterTable& input) {
     if (!trainIndex_.Contains(ToHashPair(input['i']))) {
-        std::cout << "[" << timeStamp << "] -1" << ENDL;
+        std::cout << "[" << input.TimeStamp() << "] -1" << ENDL;
         return;
     }
 
     long position = trainIndex_.Find();
     Train train = trainData_.Get(position);
     if (train.released) {
-        std::cout << "[" << timeStamp << "] -1" << ENDL;
+        std::cout << "[" << input.TimeStamp() << "] -1" << ENDL;
         return;
     }
     train.released = true;
@@ -119,12 +119,12 @@ void TrainManage::Release(ParameterTable& input, long timeStamp) {
 
     trainData_.Modify(position, train);
 
-    std::cout << "[" << timeStamp << "] 0" << ENDL;
+    std::cout << "[" << input.TimeStamp() << "] 0" << ENDL;
 }
 
-void TrainManage::QueryTrain(ParameterTable& input, long timeStamp) {
+void TrainManage::QueryTrain(ParameterTable& input) {
     if (!trainIndex_.Contains(ToHashPair(input['i']))) {
-        std::cout << "[" << timeStamp << "] -1" << ENDL;
+        std::cout << "[" << input.TimeStamp() << "] -1" << ENDL;
         return;
     }
 
@@ -133,13 +133,13 @@ void TrainManage::QueryTrain(ParameterTable& input, long timeStamp) {
     int day = date.day;
     Train train = trainData_.Get(position);
     if (date < train.startDate || date > train.endDate) {
-        std::cout << "[" << timeStamp << "] -1" << ENDL;
+        std::cout << "[" << input.TimeStamp() << "] -1" << ENDL;
         return;
     }
 
     if (train.released) {
         TrainTicketCount ticketCount = ticketData_.Get(train.ticketData);
-        std::cout << "[" << timeStamp << "] " << train.trainID << " " << train.type << ENDL;
+        std::cout << "[" << input.TimeStamp() << "] " << train.trainID << " " << train.type << ENDL;
 
         std::cout << train.stations[1] << " xx-xx xx:xx -> "
                   << date + train.departureTime[1].minute / 1440 << " "
@@ -156,7 +156,7 @@ void TrainManage::QueryTrain(ParameterTable& input, long timeStamp) {
                   << train.arrivalTime[train.stationNum] << " -> xx-xx xx:xx "
                   << train.prefixPriceSum[train.stationNum] << " x" << ENDL;
     } else {
-        std::cout << "[" << timeStamp << "] " << train.trainID << " " << train.type << ENDL;
+        std::cout << "[" << input.TimeStamp() << "] " << train.trainID << " " << train.type << ENDL;
 
         std::cout << train.stations[1] << " xx-xx xx:xx -> "
                   << date + train.departureTime[1].minute / 1440 << " "
@@ -175,7 +175,7 @@ void TrainManage::QueryTrain(ParameterTable& input, long timeStamp) {
     }
 }
 
-void TrainManage::QueryTicket(ParameterTable& input, long timeStamp) {
+void TrainManage::QueryTicket(ParameterTable& input) {
     auto start = stationIndex_.MultiFind(ToHashPair(input['s']));
     auto end = stationIndex_.MultiFind(ToHashPair(input['t']));
     Date date(input['d']);
@@ -225,26 +225,26 @@ void TrainManage::QueryTicket(ParameterTable& input, long timeStamp) {
             return a.trainID < b.trainID;
         });
     }
-    std::cout << "[" << timeStamp << "] " << journeys.Size() << ENDL;
+    std::cout << "[" << input.TimeStamp() << "] " << journeys.Size() << ENDL;
     for (auto& i : journeys) {
         std::cout << i << ENDL;
     }
 }
 
-void TrainManage::TryBuy(ParameterTable& input, UserManage& userManage, long timeStamp) {
+void TrainManage::TryBuy(ParameterTable& input, UserManage& userManage) {
     if (!userManage.Logged(input['u'])) {
-        std::cout << "[" << timeStamp << "] -1" << ENDL;
+        std::cout << "[" << input.TimeStamp() << "] -1" << ENDL;
         return;
     }
     if (!trainIndex_.Contains(ToHashPair(input['i']))) {
-        std::cout << "[" << timeStamp << "] -1" << ENDL;
+        std::cout << "[" << input.TimeStamp() << "] -1" << ENDL;
         return;
     }
 
     long position = trainIndex_.Find();
     Train train = trainData_.Get(position);
     if (!train.released) {
-        std::cout << "[" << timeStamp << "] -1" << ENDL;
+        std::cout << "[" << input.TimeStamp() << "] -1" << ENDL;
         return;
     }
 
@@ -256,7 +256,7 @@ void TrainManage::TryBuy(ParameterTable& input, UserManage& userManage, long tim
         }
     }
     if (departure == 0) {
-        std::cout << "[" << timeStamp << "] -1" << ENDL;
+        std::cout << "[" << input.TimeStamp() << "] -1" << ENDL;
         return;
     }
     for (int i = departure + 1; i <= train.stationNum; ++i) {
@@ -265,7 +265,7 @@ void TrainManage::TryBuy(ParameterTable& input, UserManage& userManage, long tim
         }
     }
     if (arrival == 0) {
-        std::cout << "[" << timeStamp << "] -1" << ENDL;
+        std::cout << "[" << input.TimeStamp() << "] -1" << ENDL;
         return;
     }
 
@@ -274,7 +274,7 @@ void TrainManage::TryBuy(ParameterTable& input, UserManage& userManage, long tim
     Date trainDate = date - train.departureTime[departure].minute / 1440;
 
     if (trainDate < train.startDate || trainDate > train.endDate) {
-        std::cout << "[" << timeStamp << "] -1" << ENDL;
+        std::cout << "[" << input.TimeStamp() << "] -1" << ENDL;
         return;
     }
 
@@ -308,11 +308,11 @@ void TrainManage::TryBuy(ParameterTable& input, UserManage& userManage, long tim
         ticket.to = arrival;
         ticket.state = 1;
         ticket.seatNum = n;
-        userManage.AddOrder(input['u'], ticket, timeStamp, *this);
-        std::cout << "[" << timeStamp << "] " << ticket.price * n << ENDL;
+        userManage.AddOrder(input['u'], ticket, input.TimeStamp(), *this);
+        std::cout << "[" << input.TimeStamp() << "] " << ticket.price * n << ENDL;
     } else {
         if (input['q'].empty() || input['q'][0] == 'f') {
-            std::cout << "[" << timeStamp << "] -1" << ENDL;
+            std::cout << "[" << input.TimeStamp() << "] -1" << ENDL;
         } else {
             Ticket ticket;
             ticket.trainID = train.trainID;
@@ -330,15 +330,16 @@ void TrainManage::TryBuy(ParameterTable& input, UserManage& userManage, long tim
             ticket.to = arrival;
             ticket.state = 0;
             ticket.seatNum = n;
-            ticketCount.remained[99][trainDate.day] = userManage.AddOrder(input['u'], ticket, timeStamp, *this);
+            ticketCount.remained[99][trainDate.day]
+                = userManage.AddOrder(input['u'], ticket, input.TimeStamp(), *this);
             if (ticketCount.remained[98][trainDate.day] == -1) {
                 ticketCount.remained[98][trainDate.day] = ticketCount.remained[99][trainDate.day];
             }
-            long ticketPtr = userManage.AddOrder(input['u'], ticket, timeStamp, *this);;
+            long ticketPtr = userManage.AddOrder(input['u'], ticket, input.TimeStamp(), *this);;
             Ticket queueTicket = userTicketData_.Get(ticketCount.remained[99][trainDate.day]);
             queueTicket.queue = ticketPtr;
             userTicketData_.Modify(ticketCount.remained[99][trainDate.day], queueTicket);
-            std::cout << "[" << timeStamp << "] queue" << ENDL;
+            std::cout << "[" << input.TimeStamp() << "] queue" << ENDL;
         }
     }
 
@@ -348,9 +349,9 @@ long TrainManage::AddOrder(Ticket& ticket, long timeStamp) {
     return userTicketData_.Add(ticket);
 }
 
-void TrainManage::QueryOrder(ParameterTable& input, UserManage& userManage, long timeStamp) {
+void TrainManage::QueryOrder(ParameterTable& input, UserManage& userManage) {
     if (!userManage.Logged(input['u'])) {
-        std::cout << "[" << timeStamp << "] -1" << ENDL;
+        std::cout << "[" << input.TimeStamp() << "] -1" << ENDL;
         return;
     }
 
@@ -360,7 +361,7 @@ void TrainManage::QueryOrder(ParameterTable& input, UserManage& userManage, long
         tickets.PushBack(userTicketData_.Get(OrderPtr));
         OrderPtr = tickets.Back().last;
     }
-    std::cout << "[" << timeStamp << "] " << tickets.Size() << ENDL;
+    std::cout << "[" << input.TimeStamp() << "] " << tickets.Size() << ENDL;
     for (auto& i : tickets) {
         std::cout << i << ENDL;
     }
@@ -374,9 +375,9 @@ void TrainManage::Clear() {
     stationIndex_.Clear();
 }
 
-void TrainManage::Refund(ParameterTable& input, UserManage& userManage, long timeStamp) {
+void TrainManage::Refund(ParameterTable& input, UserManage& userManage) {
     if (!userManage.Logged(input['u'])) {
-        std::cout << "[" << timeStamp << "] -1" << ENDL;
+        std::cout << "[" << input.TimeStamp() << "] -1" << ENDL;
         return;
     }
 
@@ -391,7 +392,7 @@ void TrainManage::Refund(ParameterTable& input, UserManage& userManage, long tim
     while (number > 0) {
         orderPtr = ticket.last;
         if (orderPtr == -1) {
-            std::cout << "[" << timeStamp << "] -1" << ENDL;
+            std::cout << "[" << input.TimeStamp() << "] -1" << ENDL;
             return;
         }
         ticket = userTicketData_.Get(orderPtr);
@@ -412,7 +413,7 @@ void TrainManage::Refund(ParameterTable& input, UserManage& userManage, long tim
     // Nothing to pend
     if (queuePtr == -1) {
         ticketData_.Modify(ticket.ticketPosition, ticketCount);
-        std::cout << "[" << timeStamp << "] 0" << ENDL;
+        std::cout << "[" << input.TimeStamp() << "] 0" << ENDL;
         return;
     }
     ticket = userTicketData_.Get(queuePtr);
@@ -431,7 +432,7 @@ void TrainManage::Refund(ParameterTable& input, UserManage& userManage, long tim
             ticketCount.remained[98][ticket.index] = -1;
             ticketCount.remained[99][ticket.index] = -1;
             ticketData_.Modify(ticket.ticketPosition, ticketCount);
-            std::cout << "[" << timeStamp << "] 0" << ENDL;
+            std::cout << "[" << input.TimeStamp() << "] 0" << ENDL;
             return;
         }
         ticket = userTicketData_.Get(queuePtr);
@@ -460,9 +461,10 @@ void TrainManage::Refund(ParameterTable& input, UserManage& userManage, long tim
     }
     ticketCount.remained[99][ticket.index] = lastPtr;
     ticketData_.Modify(ticket.ticketPosition, ticketCount);
+    std::cout << "[" << input.TimeStamp() << "] 0" << ENDL;
 }
 
-void TrainManage::QueryTransfer(ParameterTable& input, long timeStamp) {
+void TrainManage::QueryTransfer(ParameterTable& input) {
     Vector<Train> trains; // train2
     bool Found = false;
     int cost = 0, time = 0;
@@ -610,4 +612,10 @@ void TrainManage::QueryTransfer(ParameterTable& input, long timeStamp) {
         }
     }
     delete[] stations2;
+
+    if (Found) {
+        std::cout << "[" << input.TimeStamp() << "] " << journey1 << ENDL
+                  << journey2 << ENDL;
+    } else {
+        std::cout << "[" << input.TimeStamp() << "] 0" << ENDL;
 }

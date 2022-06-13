@@ -1,6 +1,18 @@
+// Train Ticket System
+// Copyright (C) 2022 Lau Yee-Yu & relyt871
 //
-// Created by LauYeeYu on 2022/6/11.
+// This library is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// any later version.
 //
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "user_manage.h"
 
@@ -46,7 +58,7 @@ void LoginPool::ModifyProfile(const User& user) {
     loginUserMap_[user.userName] = user;
 }
 
-void UserManage::Adduser(ParameterTable& input, long timeStamp) {
+void UserManage::AddUser(ParameterTable& input) {
     User user;
     user.privilege = StringToInt(input['g']);
     if (userIndex_.Empty()) {
@@ -55,7 +67,7 @@ void UserManage::Adduser(ParameterTable& input, long timeStamp) {
         user.name = input['n'];
         user.mailAddress = input['m'];
         user.privilege = 10;
-        Adduser_(user, timeStamp);
+        Adduser_(user, input.TimeStamp());
         return;
     }
 
@@ -75,42 +87,42 @@ void UserManage::Adduser_(User& user, long timeStamp) {
 
 void UserManage::Login(ParameterTable& input) {
     if (loginPool_.Contains(input['u'])) {
-        std::cout << "-1" << ENDL;
+        std::cout << "["<< input.TimeStamp() << "] -1" << ENDL;
         return;
     }
 
     if (!userIndex_.Contains(ToHashPair(input['u']))) {
-        std::cout << "-1" << ENDL;
+        std::cout << "["<< input.TimeStamp() << "] -1" << ENDL;
         return;
     }
 
     long position = userIndex_.Find();
     User user = userData_.Get(position);
     if (user.password != ToHashPair(input['p'])) {
-        std::cout << "-1" << ENDL;
+        std::cout << "["<< input.TimeStamp() << "] -1" << ENDL;
         return;
     }
     loginPool_.Login(user);
-    std::cout << "0" << ENDL;
+    std::cout << "["<< input.TimeStamp() << "] 0" << ENDL;
 }
 
 void UserManage::Logout(ParameterTable& input) {
     if (!loginPool_.Contains(input['u'])) {
-        std::cout << "-1" << ENDL;
+        std::cout << "["<< input.TimeStamp() << "] -1" << ENDL;
         return;
     }
     loginPool_.Logout(static_cast<FixedString<20>>(input['u']));
-    std::cout << "0" << ENDL;
+    std::cout << "["<< input.TimeStamp() << "] 0" << ENDL;
 }
 
 void UserManage::Query(ParameterTable& input) {
     if (!loginPool_.Contains(input['c'])) {
-        std::cout << "-1" << ENDL;
+        std::cout << "["<< input.TimeStamp() << "] -1" << ENDL;
         return;
     }
 
     if (!userIndex_.Contains(ToHashPair(input['u']))) {
-        std::cout << "-1" << ENDL;
+        std::cout << "["<< input.TimeStamp() << "] -1" << ENDL;
         return;
     }
 
@@ -119,21 +131,22 @@ void UserManage::Query(ParameterTable& input) {
 
     if (user.privilege >= loginPool_.GetData(input['c']).privilege &&
         input['c'] != input['u']) {
-        std::cout << "-1" << ENDL;
+        std::cout << "["<< input.TimeStamp() << "] -1" << ENDL;
         return;
     }
-    std::cout << user.userName << " " << user.name << " "
+    std::cout << "[" << input.TimeStamp() << "] "
+              << user.userName << " " << user.name << " "
               << user.mailAddress << " " << user.privilege << ENDL;
 }
 
-void UserManage::Modify(ParameterTable& input, long timeStamp) {
+void UserManage::Modify(ParameterTable& input) {
     if (!loginPool_.Contains(input['c'])) {
-        std::cout << "-1" << ENDL;
+        std::cout << "["<< input.TimeStamp() << "] -1" << ENDL;
         return;
     }
 
     if (!userIndex_.Contains(ToHashPair(input['u']))) {
-        std::cout << "-1" << ENDL;
+        std::cout << "["<< input.TimeStamp() << "] -1" << ENDL;
         return;
     }
 
@@ -142,7 +155,7 @@ void UserManage::Modify(ParameterTable& input, long timeStamp) {
 
     if (user.privilege >= loginPool_.GetData(input['c']).privilege &&
         input['c'] != input['u']) {
-        std::cout << "-1" << ENDL;
+        std::cout << "["<< input.TimeStamp() << "] -1" << ENDL;
         return;
     }
 
@@ -164,7 +177,8 @@ void UserManage::Modify(ParameterTable& input, long timeStamp) {
         loginPool_.ModifyProfile(user);
     }
 
-    std::cout << user.userName << " " << user.name << " "
+    std::cout << "["<< input.TimeStamp() << "] "
+              << user.userName << " " << user.name << " "
               << user.mailAddress << " " << user.privilege << ENDL;
 }
 

@@ -32,25 +32,25 @@ public:
 
     ~TrainManage() = default;
 
-    void Add(ParameterTable& input, long timeStamp);
+    void Add(ParameterTable& input);
 
-    void Delete(ParameterTable& input, long timeStamp);
+    void Delete(ParameterTable& input);
 
-    void Release(ParameterTable& input, long timeStamp);
+    void Release(ParameterTable& input);
 
-    void QueryTrain(ParameterTable& input, long timeStamp);
+    void QueryTrain(ParameterTable& input);
 
-    void QueryTicket(ParameterTable& input, long timeStamp);
+    void QueryTicket(ParameterTable& input);
 
-    void QueryTransfer(ParameterTable& input, long timeStamp);
+    void QueryTransfer(ParameterTable& input);
 
-    void TryBuy(ParameterTable& input, UserManage& userManage, long timeStamp);
+    void TryBuy(ParameterTable& input, UserManage& userManage);
 
     long AddOrder(Ticket& ticket, long timeStamp);
 
-    void QueryOrder(ParameterTable& input, UserManage& userManage, long timeStamp);
+    void QueryOrder(ParameterTable& input, UserManage& userManage);
 
-    void Refund(ParameterTable& input, UserManage& userManage, long timeStamp);
+    void Refund(ParameterTable& input, UserManage& userManage);
 
     //void RollBack(long timeStamp);
 
