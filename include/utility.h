@@ -54,8 +54,15 @@ public:
     }
 };
 
-int StringToInt(const std::string& string);
-
 using HashPair = Pair<std::size_t, std::size_t>;
+
+class HashPairHash {
+public:
+    bool operator()(const HashPair& pair) const {
+        return pair.first ^ pair.second;
+    }
+}
+
+int StringToInt(const std::string& string);
 
 #endif // TICKET_SYSTEM_INCLUDE_UTILITY_H
