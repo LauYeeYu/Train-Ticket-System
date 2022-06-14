@@ -138,9 +138,10 @@ void UserManage::Query(ParameterTable& input) {
 
     long position = userIndex_.Find();
     User user = userData_.Get(position);
+    const User& operationUser = loginPool_.GetData(input['c']);
 
-    if (user.privilege > loginPool_.GetData(input['c']).privilege ||
-       (user.privilege == loginPool_.GetData(input['c']).privilege &&
+    if (user.privilege > operationUser.privilege ||
+       (user.privilege == operationUser.privilege &&
        input['c'] != input['u'])) {
         std::cout << "["<< input.TimeStamp() << "] -1" << ENDL;
         return;
@@ -163,13 +164,23 @@ void UserManage::Modify(ParameterTable& input) {
 
     long position = userIndex_.Find();
     User user = userData_.Get(position);
+    const User& operationUser = loginPool_.GetData(input['c']);
 
-    if (user.privilege >= loginPool_.GetData(input['c']).privilege &&
-        input['c'] != input['u']) {
+    if (user.privilege > operationUser.privilege ||
+        (user.privilege == operationUser.privilege &&
+         input['c'] != input['u'])) {
         std::cout << "["<< input.TimeStamp() << "] -1" << ENDL;
         return;
     }
 
+    if (!input['g'].empty()) {
+        int privilege = StringToInt(input['g']);
+        if (privilege >= operationUser.privilege) {
+            std::cout << "["<< input.TimeStamp() << "] -1" << ENDL;
+            return;
+        }
+        user.privilege = privilege;
+    }
     if (!input['p'].empty()) {
         user.password = ToHashPair(input['p']);
     }
@@ -178,9 +189,6 @@ void UserManage::Modify(ParameterTable& input) {
     }
     if (!input['m'].empty()) {
         user.mailAddress = input['m'];
-    }
-    if (!input['g'].empty()) {
-        user.privilege = StringToInt(input['g']);
     }
 
     userData_.Modify(position, user);
