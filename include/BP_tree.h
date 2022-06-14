@@ -453,9 +453,9 @@ private:
         }
         char *tmp = memo.ReadNode(root);
         if (reinterpret_cast<Node*>(tmp) -> isleaf) {
-            return reinterpret_cast<LeafNode*>(tmp) -> MultiFind_(key, this);
+            return std::move(reinterpret_cast<LeafNode*>(tmp) -> MultiFind_(key, this));
         } else {
-            return reinterpret_cast<NleafNode*>(tmp) -> MultiFind_(key, this);
+            return std::move(reinterpret_cast<NleafNode*>(tmp) -> MultiFind_(key, this));
         }
     }
 
@@ -586,7 +586,7 @@ public:
     }
 
     Vector<ValT> MultiFind(const KeyT &key) {
-        return MultiFind_(key);
+        return std::move(MultiFind_(key));
     }
 
     bool Insert(const KeyT &key, const ValT &val) {
