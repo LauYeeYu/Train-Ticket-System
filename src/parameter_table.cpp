@@ -23,6 +23,9 @@
 namespace {
 
 long ReadTimeStamp(const std::string& string) {
+    if (string.empty()) {
+        return 0;
+    }
     long cursor = 1;
     long result = 0;
     if (string[cursor] == '-') {
@@ -63,6 +66,7 @@ void ParameterTable::ReadNewLine() {
     scanner.NewLine();
     timeStamp_ = ReadTimeStamp(scanner.NextToken());
     command_ = scanner.NextToken();
+    for (auto& i : table_) i.clear();
     while (scanner.HasMoreToken()) {
         char c = scanner.NextToken()[1] - 'a';
         table_[c] = scanner.NextToken();

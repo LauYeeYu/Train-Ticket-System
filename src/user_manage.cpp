@@ -85,6 +85,7 @@ void UserManage::AddUser(ParameterTable& input) {
     user.password = ToHashPair(input['p']);
     user.name = input['n'];
     user.mailAddress = input['m'];
+    Adduser_(user, input.TimeStamp());
 
     std::cout << "[" << input.TimeStamp() << "] 0" << ENDL;
 }
@@ -138,8 +139,9 @@ void UserManage::Query(ParameterTable& input) {
     long position = userIndex_.Find();
     User user = userData_.Get(position);
 
-    if (user.privilege >= loginPool_.GetData(input['c']).privilege &&
-        input['c'] != input['u']) {
+    if (user.privilege > loginPool_.GetData(input['c']).privilege ||
+       (user.privilege == loginPool_.GetData(input['c']).privilege &&
+       input['c'] != input['u'])) {
         std::cout << "["<< input.TimeStamp() << "] -1" << ENDL;
         return;
     }
