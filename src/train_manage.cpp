@@ -70,7 +70,7 @@ void TrainManage::Add(ParameterTable& input) {
     train.startDate = Date(dates.NextToken());
     train.endDate = Date(dates.NextToken());
 
-    train.type = input['t'][0];
+    train.type = input['y'][0];
 
     long position = trainData_.Add(train);
     trainIndex_.Insert(ToHashPair(train.trainID), position);
@@ -143,13 +143,16 @@ void TrainManage::QueryTrain(ParameterTable& input) {
 
         std::cout << train.stations[1] << " xx-xx xx:xx -> "
                   << date + train.departureTime[1].minute / 1440 << " "
+                  << train.departureTime[1] << " "
                   << train.prefixPriceSum[1] << " " << ticketCount.remained[day][1] << ENDL;
         for (int i = 2; i < train.stationNum; ++i) {
             std::cout << train.stations[i] << " "
                       << date + train.arrivalTime[i].minute / 1440 << " "
                       << train.arrivalTime[i] << " -> "
                       << date + train.departureTime[i].minute / 1440 << " "
-                      << train.prefixPriceSum[i] << " " << ticketCount.remained[day][i] << ENDL;
+                      << train.departureTime[i] << " "
+                      << train.prefixPriceSum[i] << " "
+                      << ticketCount.remained[day][i] << ENDL;
         }
         std::cout << train.stations[train.stationNum] << " "
                   << date + train.arrivalTime[train.stationNum].minute / 1440 << " "
@@ -160,12 +163,14 @@ void TrainManage::QueryTrain(ParameterTable& input) {
 
         std::cout << train.stations[1] << " xx-xx xx:xx -> "
                   << date + train.departureTime[1].minute / 1440 << " "
+                  << train.departureTime[1] << " "
                   << train.prefixPriceSum[1] << " " << train.seatNum << ENDL;
         for (int i = 2; i < train.stationNum; ++i) {
             std::cout << train.stations[i] << " "
             << date + train.arrivalTime[i].minute / 1440 << " "
             << train.arrivalTime[i] << " -> "
             << date + train.departureTime[i].minute / 1440 << " "
+            << train.departureTime[i] << " "
             << train.prefixPriceSum[i] << " " << train.seatNum << ENDL;
         }
         std::cout << train.stations[train.stationNum] << " "
@@ -194,7 +199,7 @@ void TrainManage::QueryTicket(ParameterTable& input) {
             }
             TrainTicketCount ticketCount = ticketData_.Get(train.ticketData);
             int ticketNum = ticketCount.remained[tmpDate][ticketIndex[i.first]];
-            for (int j = ticketIndex[i.first] + 1; j < train.stationNum; ++j) {
+            for (int j = ticketIndex[i.first] + 1; j < i.second; ++j) {
                 ticketNum = std::min(ticketNum,ticketCount.remained[tmpDate][j]);
             }
             Journey journey;
