@@ -409,10 +409,20 @@ void TrainManage::Refund(ParameterTable& input, UserManage& userManage) {
             return;
         }
         ticket = userTicketData_.Get(orderPtr);
-        if (ticket.state == 1) --number;
+        --number;
     }
 
     // Refund the ticket
+    if (ticket.state == -1) { // has already refunded
+        std::cout << "[" << input.TimeStamp() << "] -1" << ENDL;
+        return;
+    }
+    if (ticket.state == 0) { // in the pending list, not need to modify the train data
+        ticket.state = -1;
+        userTicketData_.Modify(orderPtr, ticket);
+        std::cout << "[" << input.TimeStamp() << "] 0" << ENDL;
+        return;
+    }
     ticket.state = -1;
     userTicketData_.Modify(orderPtr, ticket);
     TrainTicketCount ticketCount = ticketData_.Get(ticket.ticketPosition);
@@ -432,7 +442,8 @@ void TrainManage::Refund(ParameterTable& input, UserManage& userManage) {
     ticket = userTicketData_.Get(queuePtr);
 
     // the case that the head nodes can be served
-    while (CanBuyTicket(ticketCount, ticket.index, ticket.from, ticket.to, ticket.seatNum)) {
+    while (ticket.state == 0 &&
+           CanBuyTicket(ticketCount, ticket.index, ticket.from, ticket.to, ticket.seatNum)) {
         ticket.state = 1;
         nextPtr = ticket.queue;
         ticket.queue = -1;
@@ -458,7 +469,8 @@ void TrainManage::Refund(ParameterTable& input, UserManage& userManage) {
 
     while (queuePtr != -1) {
         ticket = userTicketData_.Get(queuePtr);
-        if (CanBuyTicket(ticketCount, ticket.index, ticket.from, ticket.to, ticket.seatNum)) {
+        if (ticket.state == 0 &&
+            CanBuyTicket(ticketCount, ticket.index, ticket.from, ticket.to, ticket.seatNum)) {
             ticket.state = 1;
             nextPtr = ticket.queue;
             ticket.queue = -1;
