@@ -816,7 +816,7 @@ private:
 
     template<class Compare>
     void MergeSort_(SizeT count, T** array, T** tmp, const Compare& compare) {
-        if (count == 1) return;
+        if (count <= 1) return;
         SizeT m = count >> 1;
         MergeSort_(m, array, tmp, compare);
         MergeSort_(count - m, array + m, tmp, compare);

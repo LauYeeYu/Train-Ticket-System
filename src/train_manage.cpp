@@ -83,8 +83,14 @@ void TrainManage::Delete(ParameterTable& input) {
         return;
     }
     long position = trainIndex_.Find();
+    Train train = trainData_.Get(position);
+    if (train.released) {
+        std::cout << "[" << input.TimeStamp() << "] -1" << ENDL;
+        return;
+    }
     trainData_.Delete(position);
     trainIndex_.Erase(ToHashPair(input['i']));
+    std::cout << "[" << input.TimeStamp() << "] 0" << ENDL;
 }
 
 void TrainManage::Release(ParameterTable& input) {
@@ -111,8 +117,7 @@ void TrainManage::Release(ParameterTable& input) {
         ticketCount.remained[98][i] = ticketCount.remained[99][i] = -1;
     }
 
-    long ticketPosition = ticketData_.Add(ticketCount);
-    train.ticketData = ticketPosition;
+    train.ticketData = ticketData_.Add(ticketCount);
     for (int i = 1; i <= train.stationNum; ++i) {
         stationIndex_.Insert(ToHashPair(train.stations[i]), Pair<long, long>(position, i));
     }
@@ -291,7 +296,7 @@ void TrainManage::TryBuy(ParameterTable& input, UserManage& userManage) {
         ticketNum = std::min(ticketNum, ticketCount.remained[trainDate.day][i]);
     }
 
-    //
+    // the process of purchasing
     if (ticketNum >= n) { // Enough ticket(s)
         for (int i = departure; i < arrival; ++i) {
             ticketCount.remained[trainDate.day][i] -= n;
@@ -335,15 +340,18 @@ void TrainManage::TryBuy(ParameterTable& input, UserManage& userManage) {
             ticket.to = arrival;
             ticket.state = 0;
             ticket.seatNum = n;
-            ticketCount.remained[99][trainDate.day]
-                = userManage.AddOrder(input['u'], ticket, input.TimeStamp(), *this);
-            if (ticketCount.remained[98][trainDate.day] == -1) {
+            if (ticketCount.remained[99][trainDate.day] != -1) {
+                long lastQueuePtr = ticketCount.remained[99][trainDate.day];
+                Ticket lastQueue = userTicketData_.Get(lastQueuePtr);
+                lastQueue.queue = userManage.AddOrder(input['u'], ticket, input.TimeStamp(), *this);
+                userTicketData_.Modify(lastQueuePtr, lastQueue);
+                ticketCount.remained[99][trainDate.day] = lastQueue.queue;
+            } else {
+                ticketCount.remained[99][trainDate.day]
+                    = userManage.AddOrder(input['u'], ticket, input.TimeStamp(), *this);
                 ticketCount.remained[98][trainDate.day] = ticketCount.remained[99][trainDate.day];
             }
-            long ticketPtr = userManage.AddOrder(input['u'], ticket, input.TimeStamp(), *this);;
-            Ticket queueTicket = userTicketData_.Get(ticketCount.remained[99][trainDate.day]);
-            queueTicket.queue = ticketPtr;
-            userTicketData_.Modify(ticketCount.remained[99][trainDate.day], queueTicket);
+            ticketData_.Modify(train.ticketData, ticketCount);
             std::cout << "[" << input.TimeStamp() << "] queue" << ENDL;
         }
     }
