@@ -775,7 +775,7 @@ public:
 
     template<class Compare>
     Vector& Sort(const Compare& compare) {
-        Sort(compare);
+        Sort_(compare);
         return *this;
     }
 
