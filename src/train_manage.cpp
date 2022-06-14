@@ -220,7 +220,7 @@ void TrainManage::QueryTicket(ParameterTable& input) {
             journeys.PushBack(journey);
         }
     }
-    if (input['p'].empty() || input['p'][1] == 't') {
+    if (input['p'].empty() || input['p'][0] == 't') {
         journeys.Sort([](const Journey& a, const Journey& b) {
             if (a.endTime.minute - a.startTime.minute != b.endTime.minute - b.startTime.minute) {
                 return a.endTime.minute - a.startTime.minute < b.endTime.minute - b.startTime.minute;

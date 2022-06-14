@@ -46,8 +46,12 @@ Date::Date(const std::string& string) {
         day  = (string[3] - '0') * 10 + string[4] - '0';
     } else if (c == '7') {
         day = (string[3] - '0') * 10 + string[4] - '0' + 30;
-    } else {
+    } else if (c == '8') {
         day = (string[3] - '0') * 10 + string[4] - '0' + 61;
+    } else if (c == '9') {
+        day = (string[3] - '0') * 10 + string[4] - '0' + 92;
+    } else {
+        day = -1;
     }
 }
 
