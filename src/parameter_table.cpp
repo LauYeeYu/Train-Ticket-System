@@ -22,17 +22,17 @@
 
 namespace {
 
-long StringToLong(const std::string& string) {
-    long cursor = 0;
+long ReadTimeStamp(const std::string& string) {
+    long cursor = 1;
     long result = 0;
     if (string[cursor] == '-') {
         cursor++;
-        while (cursor < string.length()) {
+        while (cursor < string.size() - 1) {
             result = result * 10 - string[cursor] + '0';
             ++cursor;
         }
     } else {
-        while (cursor < string.length()) {
+        while (cursor < string.size() - 1) {
             result = result * 10 + string[cursor] - '0';
             ++cursor;
         }
@@ -61,7 +61,7 @@ long ParameterTable::TimeStamp() const {
 void ParameterTable::ReadNewLine() {
     TokenScanner scanner;
     scanner.NewLine();
-    timeStamp_ = StringToLong(scanner.NextToken());
+    timeStamp_ = ReadTimeStamp(scanner.NextToken());
     command_ = scanner.NextToken();
     while (scanner.HasMoreToken()) {
         char c = scanner.NextToken()[1] - 'a';
