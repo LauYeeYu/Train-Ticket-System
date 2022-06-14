@@ -20,6 +20,7 @@
 
 #include <fstream>
 #include <iostream>
+#include <cstring>
 
 #include "linked_hash_map.h"
 
@@ -31,6 +32,8 @@ private:
     static constexpr int kLimit = std::max(409600 / kBlockSize, 1);
 
     std::fstream file;
+
+    char meta[kBlockSize];
 
     struct MemNode {
         MemNode* pre;
@@ -49,17 +52,37 @@ private:
         Trash(Ptr _pos = -1, Trash* _nxt = nullptr): pos(_pos), nxt(_nxt) {}
     } *trash_head;
 
+    void InitMeta(bool &isNew) {
+        file.seekp(0, std::ios::end);
+        if (file.tellp() == 0) {
+            memset(meta, 0, sizeof(meta));
+            file.write(meta, kBlockSize);
+            isNew = true;
+        } else {
+            file.seekg(0);
+            file.read(meta, kBlockSize);
+            isNew = false;
+        }
+    }
+
 public:
-    MemoryManager(const char* filename) : file(filename, std::ios::in | std::ios::out | std::ios::binary) {
+    MemoryManager(const char* filename, bool &isNew) : file(filename, std::ios::in | std::ios::out | std::ios::binary) {
         head = rear = nullptr;
         trash_head = nullptr;
+        InitMeta(isNew);
     }
     ~MemoryManager() {
         ClearMemory();
         file.close();
     }
 
+    char* GetMeta() {
+        return meta;
+    }
+
     void ClearMemory() {
+        file.seekp(0);
+        file.write((char*)&meta, kBlockSize);
         mp.Clear();
         for (MemNode* p = head; p != nullptr;) {
             MemNode* q = p -> nxt;

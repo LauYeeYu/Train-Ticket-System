@@ -17,6 +17,7 @@
 #ifndef TICKET_SYSTEM_INCLUDE_BP_TREE_H
 #define TICKET_SYSTEM_INCLUDE_BP_TREE_H
 
+#include <iostream>
 #include <functional>
 
 #include "memory.h"
@@ -47,6 +48,12 @@ private:
     ValueEqual valEq;
 
     MemoryManager<4096> memo;
+
+    bool isNew;
+    struct Meta {
+        Ptr root;
+        Ptr head;
+    };
 
     class Node {
     public:
@@ -544,13 +551,20 @@ private:
 #endif
 
 public:
-    BPTree(const char* filename): memo(filename) {
-        root = -1;
-        head = -1;
-        //TODO: meta
+    BPTree(const char* filename): memo(filename, isNew) {
+        Meta *tmp = reinterpret_cast<Meta*>(memo.GetMeta());
+        if (isNew) {
+            root = -1;
+            head = -1;
+        } else {
+            root = tmp -> root;
+            head = tmp -> head;
+        }
     }
     ~BPTree() {
-        //TODO: meta
+        Meta *tmp = reinterpret_cast<Meta*>(memo.GetMeta());
+        tmp -> root = root;
+        tmp -> head = head;
     }
 
     bool Empty() {
