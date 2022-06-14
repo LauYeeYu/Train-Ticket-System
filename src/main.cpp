@@ -83,6 +83,7 @@ bool Request(ParameterTable& parameterTable, UserManage& users, TrainManage& tra
         users.Clear();
         trains.Clear();
     } else if (parameterTable.GetCommand() == "exit") {
+        std::cout << "[" << parameterTable.TimeStamp() << "] bye" << ENDL;
         return false;
     }
     return true;
@@ -102,7 +103,7 @@ void Init() {
     TryCreateFile("user_data");
     TryCreateFile("train_index");
     TryCreateFile("train_data");
-    TryCreateFile("ticket_index");
+    TryCreateFile("ticket_data");
     TryCreateFile("station_index");
     TryCreateFile("user_ticket_data");
 }
