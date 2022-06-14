@@ -53,13 +53,13 @@ Date::Date(const std::string& string) {
 
 std::ostream& operator<<(std::ostream& os, const Date& date) {
     if (date.day > 92) {
-        os << "09-" << date.day - 92;
+        os << "09-" << (date.day - 92) / 10 << (date.day - 92) % 10;
     } else if (date.day > 61) {
-        os << "08-" << date.day - 61;
+        os << "08-" << (date.day - 61) / 10 << (date.day - 61) % 10;
     } else if (date.day > 30) {
-        os << "07-" << date.day - 30;
+        os << "07-" << (date.day - 30) / 10 << (date.day - 30) % 10;
     } else {
-        os << "06-" << date.day;
+        os << "06-" << date.day / 10 << date.day % 10;
     }
     return os;
 }
@@ -125,7 +125,8 @@ Time::Time(const std::string& string) {
 }
 
 std::ostream& operator<<(std::ostream& os, const Time& time) {
-    os << (time.minute / 60) % 24 << ":" << time.minute % 60;
+    os << (time.minute / 60) % 24 / 10 << (time.minute / 60) % 24 % 10
+       << ":" << time.minute % 60 / 10 << time.minute % 60 % 10;
     return os;
 }
 
