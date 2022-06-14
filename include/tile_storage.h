@@ -30,14 +30,7 @@ public:
      * position of deleted nodes should be read from the very beginning of
      * the file.
      */
-    explicit TileStorage(const char* fileName) : memoryManager_(fileName) {}
-
-    /**
-     * Binding the class with a certain file.  If the file is not empty, the
-     * position of deleted nodes should be read from the very beginning of
-     * the file.
-     */
-    explicit TileStorage(const std::string& fileName) : memoryManager_(fileName) {}
+    explicit TileStorage(const char* fileName) : memoryManager_(fileName, newFile_) {}
 
     /**
      * Set the data at very beginning to be deletedNodes_;
@@ -84,6 +77,7 @@ public:
 
 private:
     MemoryManager<sizeof(T)> memoryManager_;
+    bool newFile_;
 };
 
 #endif // TICKET_SYSTEM_INCLUDE_TILE_STORAGE_H
