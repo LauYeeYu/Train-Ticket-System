@@ -36,6 +36,7 @@ void TrainManage::Add(ParameterTable& input) {
     train.trainID = input['i'];
     if (trainIndex_.Contains(ToHashPair(train.trainID))) {
         std::cout << "[" << input.TimeStamp() << "] -1" << ENDL;
+        return;
     }
     train.stationNum = StringToInt(input['n']);
     train.seatNum = StringToInt(input['m']);
