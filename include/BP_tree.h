@@ -38,7 +38,7 @@ class BPTree {
 
 private:
     static constexpr int M = 4064 / (sizeof(KeyT) + 8) - 2;
-    static constexpr int HM = M / 2;
+    static constexpr int HM = (M + 1)/ 2;
     static constexpr int L = 4064 / (sizeof(KeyT) + sizeof(ValT)) - 1;
     static constexpr int HL = (L + 1) / 2;
 
@@ -271,7 +271,7 @@ private:
                 if (!cur -> Erase_(key, tree)) {
                     return false;
                 }
-                if (cur -> siz >= HM) {
+                if (cur -> siz >= HM - 1) {
                     return true;
                 }
                 NleafNode* oth;
@@ -528,7 +528,7 @@ private:
         if (root == -1) {
             return false;
         }
-        char *tmp = memo.ReadNode(root);
+        char* tmp = memo.ReadNode(root);
         Node* rt = reinterpret_cast<Node*>(tmp);
         if (rt -> isleaf) {
             if (!reinterpret_cast<LeafNode*>(tmp) -> Erase_(key, this)) {
@@ -604,12 +604,12 @@ public:
         return std::move(MultiFind_(key));
     }
 
-    bool Insert(const KeyT &key, const ValT &val) {
-        return Insert_(key, val);
+    void Insert(const KeyT &key, const ValT &val) {
+        Insert_(key, val);
     }
 
-    bool Erase(const KeyT &key) {
-        return Erase_(key);
+    void Erase(const KeyT &key) {
+        Erase_(key);
     }
 
 #ifdef TEST
