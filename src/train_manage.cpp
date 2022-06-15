@@ -398,11 +398,10 @@ void TrainManage::Refund(ParameterTable& input, UserManage& userManage) {
     // Get the pointer to the order
     long orderPtr = userManage.GetUser(input['u']).orderInfo;
     int number;
-    if (input['n'].empty()) number = 1;
-    else number = StringToInt(input['n']);
+    if (input['n'].empty()) number = 0;
+    else number = StringToInt(input['n']) - 1;
     Ticket ticket;
     ticket = userTicketData_.Get(orderPtr);
-    if (ticket.state == 1) --number;
     while (number > 0) {
         orderPtr = ticket.last;
         if (orderPtr == -1) {

@@ -76,7 +76,7 @@ void UserManage::AddUser(ParameterTable& input) {
         std::cout << "[" << input.TimeStamp() << "] -1" << ENDL;
         return;
     }
-    if (user.privilege > loginPool_.GetData(input['c']).privilege) {
+    if (user.privilege >= loginPool_.GetData(input['c']).privilege) {
         std::cout << "[" << input.TimeStamp() << "] -1" << ENDL;
         return;
     }
