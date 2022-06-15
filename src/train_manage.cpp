@@ -612,7 +612,7 @@ void TrainManage::QueryTransfer(ParameterTable& input) {
                 journey1.startDate.day = day - train1.arrivalTime[j].minute / 1440
                                          + train1.departureTime[startPtr.second].minute / 1440;
                 journey1.endTime = train1.arrivalTime[j];
-                journey1.endDate.day = journey1.startDate.day;
+                journey1.endDate.day = day;
                 journey1.price = train1.prefixPriceSum[j] - train1.prefixPriceSum[startPtr.second];
                 journey1.seat = remained1;
 
