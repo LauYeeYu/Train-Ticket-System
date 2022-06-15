@@ -51,6 +51,7 @@ private:
         Trash* nxt;
         Trash(Ptr _pos = -1, Trash* _nxt = nullptr): pos(_pos), nxt(_nxt) {}
     } *trash_head;
+    Ptr old_trash;
 
     void InitMeta(bool &isNew) {
         file.seekp(0, std::ios::end);
@@ -58,10 +59,12 @@ private:
             memset(meta, 0, sizeof(meta));
             file.write(meta, kBlockSize);
             isNew = true;
+            old_trash = -1;
         } else {
             file.seekg(0);
             file.read(meta, kBlockSize);
             isNew = false;
+            old_trash = *(reinterpret_cast<Ptr*>(meta + 16));
         }
     }
 
@@ -81,8 +84,6 @@ public:
     }
 
     void ClearMemory() {
-        file.seekp(0);
-        file.write((char*)&meta, kBlockSize);
         mp.Clear();
         for (MemNode* p = head; p != nullptr;) {
             MemNode* q = p -> nxt;
@@ -92,12 +93,25 @@ public:
             p = q;
         }
         head = rear = nullptr;
-        for (Trash* p = trash_head; p != nullptr; ) {
-            Trash* q = p -> nxt;
-            delete p;
-            p = q;
+        if (trash_head == nullptr) {
+            *(reinterpret_cast<Ptr*>(meta + 16)) = old_trash;
+        } else {
+            *(reinterpret_cast<Ptr*>(meta + 16)) = trash_head -> pos;
+            for (Trash* p = trash_head; p != nullptr; ) {
+                Trash* q = p -> nxt;
+                file.seekp(p -> pos);
+                if (q == nullptr) {
+                    file.write((char*)&old_trash, sizeof(Ptr));
+                } else {
+                    file.write((char*)&(q -> pos), sizeof(Ptr));
+                }
+                delete p;
+                p = q;
+            }
+            trash_head = nullptr;
         }
-        trash_head = nullptr;
+        file.seekp(0);
+        file.write((char*)&meta, kBlockSize);
     }
 
     void Clear() {
@@ -142,6 +156,10 @@ public:
             Trash *tmp = trash_head;
             trash_head = trash_head -> nxt;
             delete tmp;
+        } else if (old_trash != -1) {
+            cur -> pos = old_trash;
+            file.seekg(old_trash);
+            file.read((char*)&old_trash, sizeof(Ptr));
         } else {
             file.seekp(0, std::ios::end);
             cur -> pos = file.tellp();
