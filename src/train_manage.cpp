@@ -490,6 +490,9 @@ void TrainManage::Refund(ParameterTable& input, UserManage& userManage) {
 }
 
 void TrainManage::QueryTransfer(ParameterTable& input) {
+    if (input.TimeStamp() == 257836) {
+        int p = 1;
+    }
     Vector<Train> trains; // train2
     bool Found = false;
     int cost = 0, time = 0;
@@ -561,7 +564,7 @@ void TrainManage::QueryTransfer(ParameterTable& input) {
                     tmpCost = train1.prefixPriceSum[j] - train1.prefixPriceSum[startPtr.second]
                               + trains[train2].prefixPriceSum[end[train2].second]
                               - trains[train2].prefixPriceSum[stationIndex2];
-                    if (Found) {
+                    if (Found && tmpTime == time) {
                         if (tmpCost > cost) continue;
                         if (tmpCost == cost) {
                             if (journey1.trainID < train1.trainID) continue;
@@ -592,7 +595,7 @@ void TrainManage::QueryTransfer(ParameterTable& input) {
                     int dayCount = day2 - (day - train1.departureTime[startPtr.second].minute / 1440);
                     tmpTime = dayCount * 1440 + train1.departureTime[startPtr.second].minute % 1440
                               - train1.arrivalTime[end[train2].second].minute % 1440;
-                    if (Found) {
+                    if (Found && tmpCost == cost) {
                         if (tmpTime > time) continue;
                         if (tmpTime == time) {
                             if (journey1.trainID < train1.trainID) continue;
