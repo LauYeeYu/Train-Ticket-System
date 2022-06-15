@@ -535,8 +535,10 @@ void TrainManage::QueryTransfer(ParameterTable& input) {
                 int arrivalDay1 = date.day - train1.departureTime[startPtr.second].minute / 1440
                                   + train1.arrivalTime[j].minute / 1440;
                 // eliminate the wrong date
-                if (arrivalDay1 > trains[train2].endDate.day) continue;
-                if (arrivalDay1 == trains[train2].endDate.day &&
+                if (arrivalDay1 > trains[train2].endDate.day
+                                  + trains[train2].departureTime[stationIndex2].minute / 1440) continue;
+                if (arrivalDay1 == trains[train2].endDate.day
+                                   + trains[train2].departureTime[stationIndex2].minute / 1440 &&
                     train1.arrivalTime[j].minute % 1440 >
                     trains[train2].departureTime[stationIndex2].minute % 1440) {
                     continue;
