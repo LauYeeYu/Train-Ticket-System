@@ -518,13 +518,13 @@ void TrainManage::QueryTransfer(ParameterTable& input) {
         if (tmpDate < train1.startDate.day || tmpDate > train1.endDate.day) continue;
         TrainTicketCount ticketCount1 = ticketData_.Get(train1.ticketData);
         int startDate = date.day - train1.departureTime[startPtr.second].minute / 1440;
-        int remained1 = ticketCount1.remained[startDate][startPtr.second];
 
         for (int j = startPtr.second + 1; j <= train1.stationNum; ++j) {
             stationHash[j] = ToHashPair(train1.stations[j]);
         }
         for (int train2 = 0; train2 < end.Size(); ++train2) {
             if (end[train2].first == startPtr.first) continue; // eliminate the same train
+            int remained1 = ticketCount1.remained[startDate][startPtr.second];
             for (int j = startPtr.second + 1; j <= train1.stationNum; ++j) {
                 remained1 = std::min(remained1, ticketCount1.remained[startDate][j - 1]);
                 if (!stations2[train2].Contains(stationHash[j])) continue;
