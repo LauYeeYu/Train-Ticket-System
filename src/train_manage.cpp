@@ -512,7 +512,7 @@ void TrainManage::QueryTransfer(ParameterTable& input) {
         }
     }
 
-    for (auto& startPtr: start) {
+    for (auto& startPtr : start) {
         Train train1 = trainData_.Get(startPtr.first);
         int tmpDate = date.day - train1.departureTime[startPtr.second].minute / 1440;
         if (tmpDate < train1.startDate.day || tmpDate > train1.endDate.day) continue;
@@ -529,34 +529,34 @@ void TrainManage::QueryTransfer(ParameterTable& input) {
                 remained1 = std::min(remained1, ticketCount1.remained[startDate][j - 1]);
                 if (!stations2[train2].Contains(stationHash[j])) continue;
                 int stationIndex2 = stations2[train2][stationHash[j]];
-                int day = date.day - train1.departureTime[startPtr.second].minute / 1440
-                          + train1.arrivalTime[j].minute / 1440;
+                int arrivalDay1 = date.day - train1.departureTime[startPtr.second].minute / 1440
+                                  + train1.arrivalTime[j].minute / 1440;
                 // eliminate the wrong date
-                if (day > trains[train2].endDate.day) continue;
-                if (day == trains[train2].endDate.day &&
+                if (arrivalDay1 > trains[train2].endDate.day) continue;
+                if (arrivalDay1 == trains[train2].endDate.day &&
                     train1.arrivalTime[j].minute % 1440 >
                     trains[train2].departureTime[stationIndex2].minute % 1440) {
                     continue;
                 }
-                int tmpCost, tmpTime, day2;
+                int tmpCost, tmpTime, arrivalDay2;
                 if (rule) {
-                    if (day < trains[train2].startDate.day
-                              + trains[train2].departureTime[stationIndex2].minute / 1440) {
-                        day2 = trains[train2].startDate.day
-                               + trains[train2].arrivalTime[end[train2].second].minute / 1440;
+                    if (arrivalDay1 < trains[train2].startDate.day
+                                      + trains[train2].departureTime[stationIndex2].minute / 1440) {
+                        arrivalDay2 = trains[train2].startDate.day
+                                      + trains[train2].arrivalTime[end[train2].second].minute / 1440;
                     } else if (train1.arrivalTime[j].minute % 1440 >
                                trains[train2].departureTime[stationIndex2].minute % 1440) {
-                        day2 = day + 1
-                               + trains[train2].arrivalTime[end[train2].second].minute / 1440
-                               - trains[train2].departureTime[stationIndex2].minute / 1440;
+                        arrivalDay2 = arrivalDay1 + 1
+                                      + trains[train2].arrivalTime[end[train2].second].minute / 1440
+                                      - trains[train2].departureTime[stationIndex2].minute / 1440;
                     } else {
-                        day2 = day
-                               + trains[train2].arrivalTime[end[train2].second].minute / 1440
-                               - trains[train2].departureTime[stationIndex2].minute / 1440;
+                        arrivalDay2 = arrivalDay1
+                                      + trains[train2].arrivalTime[end[train2].second].minute / 1440
+                                      - trains[train2].departureTime[stationIndex2].minute / 1440;
                     }
-                    int dayCount = day2 - (day - train1.departureTime[startPtr.second].minute / 1440);
-                    tmpTime = dayCount * 1440 + train1.departureTime[startPtr.second].minute % 1440
-                              - train1.arrivalTime[end[train2].second].minute % 1440;
+                    int dayCount = arrivalDay2 - date.day;
+                    tmpTime = dayCount * 1440 - train1.departureTime[startPtr.second].minute % 1440
+                              + trains[train2].arrivalTime[end[train2].second].minute % 1440;
                     if (Found && tmpTime > time) continue;
                     tmpCost = train1.prefixPriceSum[j] - train1.prefixPriceSum[startPtr.second]
                               + trains[train2].prefixPriceSum[end[train2].second]
@@ -575,23 +575,23 @@ void TrainManage::QueryTransfer(ParameterTable& input) {
                               + trains[train2].prefixPriceSum[end[train2].second]
                               - trains[train2].prefixPriceSum[stationIndex2];
                     if (Found && tmpCost > cost) continue;
-                    if (day < trains[train2].startDate.day
-                              + trains[train2].departureTime[stationIndex2].minute / 1440) {
-                        day2 = trains[train2].startDate.day
-                               + trains[train2].arrivalTime[end[train2].second].minute / 1440;
+                    if (arrivalDay1 < trains[train2].startDate.day
+                                      + trains[train2].departureTime[stationIndex2].minute / 1440) {
+                        arrivalDay2 = trains[train2].startDate.day
+                                      + trains[train2].arrivalTime[end[train2].second].minute / 1440;
                     } else if (train1.arrivalTime[j].minute % 1440 >
                                trains[train2].departureTime[stationIndex2].minute % 1440) {
-                        day2 = day + 1
-                               + trains[train2].arrivalTime[end[train2].second].minute / 1440
-                               - trains[train2].departureTime[stationIndex2].minute / 1440;
+                        arrivalDay2 = arrivalDay1 + 1
+                                      + trains[train2].arrivalTime[end[train2].second].minute / 1440
+                                      - trains[train2].departureTime[stationIndex2].minute / 1440;
                     } else {
-                        day2 = day
-                               + trains[train2].arrivalTime[end[train2].second].minute / 1440
-                               - trains[train2].departureTime[stationIndex2].minute / 1440;
+                        arrivalDay2 = arrivalDay1
+                                      + trains[train2].arrivalTime[end[train2].second].minute / 1440
+                                      - trains[train2].departureTime[stationIndex2].minute / 1440;
                     }
-                    int dayCount = day2 - (day - train1.departureTime[startPtr.second].minute / 1440);
-                    tmpTime = dayCount * 1440 + train1.departureTime[startPtr.second].minute % 1440
-                              - train1.arrivalTime[end[train2].second].minute % 1440;
+                    int dayCount = arrivalDay2 - date.day;
+                    tmpTime = dayCount * 1440 - train1.departureTime[startPtr.second].minute % 1440
+                              + trains[train2].arrivalTime[end[train2].second].minute % 1440;
                     if (Found && tmpCost == cost) {
                         if (tmpTime > time) continue;
                         if (tmpTime == time) {
@@ -609,10 +609,9 @@ void TrainManage::QueryTransfer(ParameterTable& input) {
                 journey1.startStation = train1.stations[startPtr.second];
                 journey1.endStation = train1.stations[j];
                 journey1.startTime = train1.departureTime[startPtr.second];
-                journey1.startDate.day = day - train1.arrivalTime[j].minute / 1440
-                                         + train1.departureTime[startPtr.second].minute / 1440;
+                journey1.startDate.day = date.day;
                 journey1.endTime = train1.arrivalTime[j];
-                journey1.endDate.day = day;
+                journey1.endDate.day = arrivalDay1;
                 journey1.price = train1.prefixPriceSum[j] - train1.prefixPriceSum[startPtr.second];
                 journey1.seat = remained1;
 
@@ -620,10 +619,10 @@ void TrainManage::QueryTransfer(ParameterTable& input) {
                 journey2.startStation = trains[train2].stations[stationIndex2];
                 journey2.endStation = trains[train2].stations[end[train2].second];
                 journey2.startTime = trains[train2].departureTime[stationIndex2];
-                journey2.startDate.day = day2 - trains[train2].arrivalTime[end[train2].second].minute / 1440
+                journey2.startDate.day = arrivalDay2 - trains[train2].arrivalTime[end[train2].second].minute / 1440
                                          + trains[train2].departureTime[stationIndex2].minute / 1440;
                 journey2.endTime = trains[train2].arrivalTime[end[train2].second];
-                journey2.endDate.day = day2;
+                journey2.endDate.day = arrivalDay2;
                 journey2.price = trains[train2].prefixPriceSum[end[train2].second]
                                  - trains[train2].prefixPriceSum[stationIndex2];
                 TrainTicketCount ticketCount2 = ticketData_.Get(trains[train2].ticketData);
