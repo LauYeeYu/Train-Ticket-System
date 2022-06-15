@@ -4,8 +4,10 @@ include(CTest)
 
 set(CMAKE_CXX_STANDARD 17)
 
+set(CMAKE_CXX_FLAGS "-Ofast -DBOOST")
+
 set(TICKET_INCLUDES
-        ${ticket_SOURCE_DIR}/include)
+        include)
 
 set(TICKET_SOURCES
         src/main.cpp
