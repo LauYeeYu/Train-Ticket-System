@@ -490,9 +490,6 @@ void TrainManage::Refund(ParameterTable& input, UserManage& userManage) {
 }
 
 void TrainManage::QueryTransfer(ParameterTable& input) {
-    if (input.TimeStamp() == 257836) {
-        int p = 1;
-    }
     Vector<Train> trains; // train2
     bool Found = false;
     int cost = 0, time = 0;
