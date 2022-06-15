@@ -480,6 +480,9 @@ void TrainManage::Refund(ParameterTable& input, UserManage& userManage) {
             }
             queuePtr = nextPtr;
         } else {
+            Ticket lastTicket = userTicketData_.Get(lastPtr);
+            lastTicket.queue = queuePtr;
+            userTicketData_.Modify(lastPtr, lastTicket);
             lastPtr = queuePtr;
             queuePtr = ticket.queue;
         }
