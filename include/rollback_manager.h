@@ -29,10 +29,10 @@ private:
     
     Ptr lastPos;
     struct RollBackNode {
+        char info[kBlockSize];
         Ptr pre;
         Ptr pos;
         long timeStamp;
-        char info[kBlockSize];
         RollBackNode(Ptr _pre = -1, Ptr _pos = -1, long _timeStamp = 0):
             pre(_pre), pos(_pos), timeStamp(_timeStamp) {}
     };
@@ -62,6 +62,11 @@ public:
     void Insert(char* info, Ptr pos, long timeStamp) {
         RollBackNode cur(lastPos, pos, timeStamp);
         memcpy(cur.info, info, kBlockSize);
+        if (lastPos == -1) {
+            file.seekp(sizeof(Ptr));
+        } else {
+            file.seekp(lastPos + sizeof(RollBackNode));
+        }
         file.seekp(0, std::ios::end);
         lastPos = file.tellp();
         file.write((char*)&cur, sizeof(cur));
