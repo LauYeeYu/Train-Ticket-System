@@ -97,6 +97,12 @@ struct Journey {
     }
 };
 
+enum class TicketState {
+    refunded = -1,
+    pending = 0,
+    bought = 1,
+};
+
 struct Ticket {
     TrainID trainID;
     Station startStation;
@@ -111,13 +117,13 @@ struct Ticket {
     int  price;
     int  seatNum;
     int  from, to;
-    int  state; // 1 for bought, 0 for queuing, -1 for refunded
+    TicketState state; // 1 for bought, 0 for queuing, -1 for refunded
     long last = -1; // the last query
     long queue = -1; // the next queuing order
     friend std::ostream& operator<<(std::ostream& os, const Ticket& ticket) {
-        if (ticket.state == 1) {
+        if (ticket.state == TicketState::bought) {
             os << "[success] ";
-        } else if (ticket.state == 0) {
+        } else if (ticket.state == TicketState::pending) {
             os << "[pending] ";
         } else {
             os << "[refunded] ";
