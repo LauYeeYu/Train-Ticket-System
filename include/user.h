@@ -34,8 +34,4 @@ struct User {
     int        privilege = 0;
 };
 
-class UserCompare {
-    bool operator()(const User& lhs, const User& rhs);
-};
-
 #endif // TICKET_SYSTEM_INCLUDE_USER_H

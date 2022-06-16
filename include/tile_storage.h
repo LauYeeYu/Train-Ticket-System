@@ -54,7 +54,7 @@ public:
     }
 
     /**
-     * Get the value at the postion.
+     * Get the value at the position.
      * @return the data at the position
      */
     const T& Get(Ptr position) {
@@ -64,7 +64,7 @@ public:
 
     /**
      * Modify the data at the position with the newValue and the time stamp.
-     * @return the postion of the new value
+     * @return the position of the new value
      */
     void Modify(Ptr position, const T& newValue) {
         char* data = memoryManager_.ReadNode(position);

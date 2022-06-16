@@ -86,125 +86,23 @@ template<class Key,
          class ValueEqual   = std::equal_to<Value>>
 class BPTree {
 public:
-    using Ptr = long;
-
-    struct PairData {
-        Key key;
-        Value value;
-        long timeStamp;
-    };
-
-    /**
-     * Binding the tree with a certain file.  If the file is empty, a head
-     * node for a new class is stored, and the tree is constructed.  If not,
-     * the metadata of the old tree is read.
-     */
-    BPTree(const char* fileName);
-
-    BPTree(const std::string& fileName);
-
-    BPTree(const BPTree&) = delete;
-
-    BPTree& operator=(const BPTree&) = delete;
-
+    BPTree(const char* filename): memo(filename, isNew);
+    
     ~BPTree();
 
-    /**
-     * Insert a key value pair into this tree.
-     * @param key
-     * @param value
-     * @return a bool to tell whether this operation is success or not
-     */
-    bool Insert(const Key& key, const Value& value, long timeStamp);
+    bool Empty();
 
-    /**
-     * Move the pair with the input key to deleted zone.
-     * @param key
-     */
-    void Erase(const Key& key);
-
-    /**
-     * Roll back to the prevoius time stamp.  If the tree have been cleared
-     * after that time stamp, the bahaviour is undefined.
-     *
-     */
-    void RollBack(long timeStamp);
-
-    /**
-     * Clear all the data in this tree. All the space is ready to be reused.
-     */
     void Clear();
 
-    /**
-     * Tell whether there is a node with the input key.
-     */
-    bool Contains(const Key& key);
+    bool Contains(const KeyT &key);
 
-    /**
-     * Find the first node with the key.
-     @return the first node with the input key
-     */
-    Value FindFirst(const Key& key);
+    ValT Find();
 
-    /**
-     * Get all the value with the input key.
-     @return string with the input key
-     */
-    std::basic_string<Value> FindAll(const Key& key);
+    Vector<ValT> MultiFind(const KeyT &key);
 
-private:
-    struct Head_ {
-        long nodeSize; // the proper size making sure the block size is 4KiB
-        Ptr head = -1;
-        Ptr garbage = -1; // a single linked list to store the erased pair(s)
+    void Insert(const KeyT &key, const ValT &val);
 
-        bool cached = false;
-        PairData cachedData; // cached data
-
-        // maybe some other cached stuff
-    };
-
-    struct Block_ {
-        PairData data[2 * kTargetSize_];
-        Ptr      pointers[2 * kTargetSize_]; // For leaf nodes, use it as linked pointer to other leafs
-        long     count = 0;
-        bool     leaf  = false;
-    };
-
-    constexpr static long kBlockSize_  = 4096;
-    constexpr static long kTargetSize_ = (kBlockSize - 2 * sizeof(Ptr)) / (sizeof(Ptr) + sizeof(PairData)) / 2 - 1;
-
-    static_assert(kTargetSize_ >= 2 && sizeof(Block_) > kBlockSize_);
-
-    template<class Type>
-    Type Read_(Ptr position);
-
-    /**
-     * Read the block from the file.
-     * @param position
-     * @return the block at the position
-     */
-    Block_ ReadBlock_(Ptr position);
-
-    /**
-     * Read the head meta from the class.
-     * @param position
-     * @return the ptr data
-     */
-    Head_ ReadHead_(Ptr position);
-
-    /**
-     * Allocate a space of 4KiB at the end of the file.
-     */
-    Ptr New_(long size);
-
-    /**
-     * Store the value at the given position.
-     */
-    template<class Type>
-    void Write_(Ptr position, const Type& value);
-
-    Head_ head_;
+    void Erase(const KeyT &key);
 };
 ```
 
@@ -215,26 +113,12 @@ template<class T>
 class TileStorage {
 public:
     using Ptr = long;
-
-    struct Node {
-        T    value;
-        long timeStamp;
-        Ptr  previous = -1;
-    };
-
     /**
      * Binding the class with a certain file.  If the file is not empty, the
      * position of deleted nodes should be read from the very beginning of
      * the file.
      */
     TileStorage(const char* fileName);
-
-    /**
-     * Binding the class with a certain file.  If the file is not empty, the
-     * position of deleted nodes should be read from the very beginning of
-     * the file.
-     */
-    TileStorage(const std::string& fileName);
 
     /**
      * Set the data at very beginning to be deletedNodes_;
@@ -250,64 +134,24 @@ public:
     Ptr Add(const T& value, long timeStamp);
 
     /**
-     * Get the value at the postion.
+     * Get the value at the position.
      * @return the data at the position
      */
     T Get(Ptr position);
 
     /**
-     * Get the value at the postion.
-     * @return the data at the position
-     */
-    Node GetNode(Ptr position);
-
-    /**
      * Modify the data at the position with the newValue and the time stamp.
-     * @return the postion of the new value
+     * @return the position of the new value
      */
     Ptr Modify(Ptr position, const T& newValue, long timeStamp);
 
     /**
      * Roll back the data at the position to a certain time stamp.  The node belongs to the ``future'' can be deleted
-     * @return the postion of the rolled backed node
+     * @return the position of the rolled backed node
      */
     Ptr RollBack(Ptr position, long timeStamp);
 
     void Clear();
-
-private:
-    template<class Type>
-    Type Read_(Ptr position);
-    
-    /**
-     * Read the node from the file.
-     * @param position
-     * @return the node at the position
-     */
-    Node ReadNode_(Ptr position);
-
-    /**
-     * Read the ptr data from the file.  Seemed to be dedicated for the deletedNodes_.
-     * @param position
-     * @return the ptr data
-     */
-    Ptr ReadPtr_(Ptr position);
-
-    /**
-     * Allocate a space at the end of the file.
-     */
-    Ptr New_(long size);
-
-    /**
-     * Store the value at the given position.
-     */
-    template<class Type>
-    void Write_(Ptr position, const Type& value);
-
-    // the empty nodes to be recycled for new nodes (with a single linked list)
-    Ptr deletedNodes_ = -1;
-
-    std::fstream file_;
 };
 ```
 
@@ -315,9 +159,10 @@ private:
 
 ```c++
 #include "fixed_string.h"
+#include "utility.h"
 
 using UserName   = FixedString<20>;
-using Password   = FixedString<30>;
+using Password   = HashPair;
 using Name       = FixedString<20>;
 using mailAdress = FixedString<30>;
 
@@ -329,10 +174,6 @@ struct User {
     long       orderInfo = -1; // for ``query_order''
     int        privilege = 0;
 };
-
-class UserCompare {
-    bool operator()(const User& lhs, const User& rhs);
-};
 ```
 
 ## In File `user_manage.h`
@@ -342,31 +183,47 @@ class UserCompare {
 #include "linked_hash_map.h"
 #include "parameter_table.h"
 #include "tile_storage.h"
+#include "train.h"
 #include "user.h"
+#include "utility.h"
+
+class TrainManage;
 
 class LoginPool {
 public:
-    LoginPool();
+    LoginPool() = default;
 
-    ~LoginPool();
+    ~LoginPool() = default;
 
-    bool Contains(FixedString<20> name); // Tell whether a user has logged in
+    void Login(const User& user);
 
-    const User& getData(FixedString<20> name);
+    void Logout(const UserName& userName);
+
+    bool Contains(const FixedString<20>& name); // Tell whether a user has logged in
+
+    bool Contains(const std::string& name); // Tell whether a user has logged in
+
+    const User& GetData(const FixedString<20>& name);
+
+    const User& GetData(const std::string& name);
+
+    void ModifyProfile(const User& user);
 
     void Clear();
 
+    bool Empty();
+
 private:
-    LinkedHashMap<FixedString<20>, User, FixedStringHash<20>> loginUserMap_;
+    LinkedHashMap<UserName, User, FixedStringHash1> loginUserMap_;
 };
 
 class UserManage {
 public:
-    UserManage();
+    UserManage() = default;
 
-    ~UserManage();
+    ~UserManage() = default;
 
-    void Adduser(ParameterTable& input, long timeStamp);
+    void AddUser(ParameterTable& input);
 
     void Login(ParameterTable& input);
 
@@ -374,85 +231,130 @@ public:
 
     void Query(ParameterTable& input);
 
-    void Modify(ParameterTable& input, long timeStamp);
+    void Modify(ParameterTable& input);
 
     bool Logged(const std::string& name);
 
-    long LastOrder(const std::string& name);
+    long AddOrder(const std::string& name, Ticket& ticket, long timeStamp, TrainManage& trainManage);
 
-    long Addorder(const std::string& name, long position, long timeStamp);
-
-    long ModifyLastOrderPtr(long position, long timeStamp);
-
-    void RollBack(long time);
+    //void RollBack(long time);
 
     void Clear();
 
+    const User& GetUser(const std::string& name);
+
 private:
+    void Adduser_(User& user, long timeStamp);
+
     LoginPool loginPool_;
 
-    BPTree<UserName, long> userIndex_ = BPTree<UserName, long>("user_index");
-    TileStorage<User> userData_ = TileStorage<User>("user_data");
+    BPTree<HashPair, long> userIndex_ = BPTree<HashPair, long>("user_index");
+    TileStorage<User>      userData_  = TileStorage<User>("user_data");
 };
 ```
 
 ## In File `train.h`
 
 ```c++
+#include <iostream>
+
 #include "fixed_string.h"
 
 using TrainID = FixedString<20>;
 using Station = FixedString<40>;
 
 struct Date {
-    bool operator<(const Date& rhs);
-    bool operator>(const Date& rhs);
-    bool operator==(const Date& rhs);
-    bool operator+=(int rhs);
-    bool operator+(int rhs);
-
-    int month, day;
+    Date() = default;
+    explicit Date(int day) : day(day) {}
+    explicit Date(const std::string& string);
+    
+    bool operator<(const Date& rhs) const;
+    bool operator>(const Date& rhs) const;
+    bool operator==(const Date& rhs) const;
+    bool operator!=(const Date& rhs) const;
+    Date& operator+=(int rhs);
+    Date operator+(int rhs);
+    Date& operator-=(int rhs);
+    Date operator-(int rhs);
+    
+    friend std::ostream& operator<<(std::ostream& os, const Date& date);
+    
+    int day;
 };
 
 struct Time {
-    bool operator<(const Time& rhs);
-    bool operator>(const Time& rhs);
-    bool operator==(const Time& rhs);
+    Time() = default;
+    explicit Time(int minute) : minute(minute) {}
+    explicit Time(const std::string& string);
+    Time(const Time&) = default;
+    bool operator<(const Time& rhs) const;
+    bool operator>(const Time& rhs) const;
+    bool operator==(const Time& rhs) const;
+    bool operator!=(const Time& rhs) const;
     Time& operator+=(const Time& rhs);
-    bool operator-(const Time& rhs);
+    Time operator-(const Time& rhs);
     Time operator+(const Time& rhs);
     Time& operator+=(int rhs);
     Time operator+(int rhs);
-    int ToInt(); // the minute counting
     
-    int day, hour, time;
+    friend std::ostream& operator<<(std::ostream& os, const Time& time);
+    
+    int minute;
 };
 
 struct Train {
     TrainID trainID;
-    Station stations;
-    long queueFirst = -1;
-    long queueLast = -1;
+    Station stations[101];
+    long ticketData = -1;
     int  stationNum;
-    int  seatNum[101];
+    int  seatNum;
     int  prefixPriceSum[101];
     Time departureTime[101];
     Time arrivalTime[101];
     Date startDate, endDate;
-    char Type;
-    bool status = false; // Indicate whether the train is released or not
+    char type;
+    bool released = false; // Indicate whether the train is released or not
+};
+
+struct Journey {
+    TrainID trainID;
+    Station startStation;
+    Station endStation;
+    Date startDate;
+    Time startTime;
+    Date endDate;
+    Time endTime;
+    int price;
+    int seat;
+    
+    friend std::ostream& operator<<(std::ostream& os, const Journey& journey);
+};
+
+enum class TicketState {
+    refunded = -1,
+    pending = 0,
+    bought = 1,
 };
 
 struct Ticket {
+    TrainID trainID;
+    Station startStation;
+    Station endStation;
+    Date startDate;
+    Time startTime;
+    Date endDate;
+    Time endTime;
     long trainPosition;
-    int  number;
-    int  price;
-    int  from, to;
-    int state; // 1 for bought, 0 for queuing, -1 for refunded
+    long ticketPosition;
+    int index;
+    int price;
+    int seatNum;
+    int from, to;
+    TicketState state; // 1 for bought, 0 for queuing, -1 for refunded
     long last = -1; // the last query
     long queue = -1; // the next queuing order
+    friend std::ostream& operator<<(std::ostream& os, const Ticket& ticket);
 };
-
 struct TrainTicketCount {
     int remained[100][100];
 };
@@ -465,40 +367,46 @@ struct TrainTicketCount {
 #include "parameter_table.h"
 #include "tile_storage.h"
 #include "train.h"
+#include "utility.h"
+#include "user_manage.h"
+
+using StationPair = Pair<long, long>;
 
 class TrainManage {
-public:
-    TrainManage();
-
-    ~TrainManage();
-
-    void Add(ParameterTable& input, long timeStamp);
+    public:
+    TrainManage() = default;
     
-    void Delete(ParameterTable& input, long timeStamp);
-
-    void Release(ParameterTable& input, long timeStamp);
-
+    ~TrainManage() = default;
+    
+    void Add(ParameterTable& input);
+    
+    void Delete(ParameterTable& input);
+    
+    void Release(ParameterTable& input);
+    
     void QueryTrain(ParameterTable& input);
-
+    
     void QueryTicket(ParameterTable& input);
-
+    
     void QueryTransfer(ParameterTable& input);
-
-    void TryBuy(ParameterTable& input, long timeStamp);
-
-    void QueryOrder(ParameterTable& input);
-
-    void Refund(ParameterTable& input, long timeStamp);
-
-    void RollBack(long timeStamp);
-
+    
+    void TryBuy(ParameterTable& input, UserManage& userManage);
+    
+    long AddOrder(Ticket& ticket, long timeStamp);
+    
+    void QueryOrder(ParameterTable& input, UserManage& userManage);
+    
+    void Refund(ParameterTable& input, UserManage& userManage);
+    
+    //void RollBack(long timeStamp);
+    
     void Clear();
-
-private:
-    BPTree<TrainID, long> trainIndex_ = BPTree<TrainID, long>("train_index");
-    TileStorage<Train> trainData_ = TileStorage<Train>("train_data");
-    TileStorage<TrainTicketCount> ticketData_ = TileStorage<TrainTicketCount>("ticket_data");
-    BPTree<Station, long> startIndex_ = BPTree<Station, long>("station_index");
-    TileStorage<Ticket> userTicketData_ = TileStorage<Ticket>("user_ticket_data");
+    
+    private:
+    BPTree<HashPair, long>        trainIndex_     = BPTree<HashPair, long>("train_index");
+    TileStorage<Train>            trainData_      = TileStorage<Train>("train_data");
+    TileStorage<TrainTicketCount> ticketData_     = TileStorage<TrainTicketCount>("ticket_data");
+    BPTree<HashPair, StationPair> stationIndex_   = BPTree<HashPair, StationPair>("station_index");
+    TileStorage<Ticket>           userTicketData_ = TileStorage<Ticket>("user_ticket_data");
 };
 ```
