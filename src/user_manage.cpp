@@ -80,6 +80,10 @@ void UserManage::AddUser(ParameterTable& input) {
         std::cout << "[" << input.TimeStamp() << "] -1" << ENDL;
         return;
     }
+    if (userIndex_.Contains(ToHashPair(input['u']))) {
+        std::cout << "[" << input.TimeStamp() << "] -1" << ENDL;
+        return;
+    }
 
     user.userName = input['u'];
     user.password = ToHashPair(input['p']);
