@@ -49,8 +49,8 @@ private:
     }
 
 public:
-    RollBackManager(const char* filename): 
-        file(filename, std::ios::in | std::ios::out | std::ios::binary) {
+    RollBackManager(const char* filename)
+        : file(filename, std::ios::in | std::ios::out | std::ios::binary) {
         InitMeta();
     }
 

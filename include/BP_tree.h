@@ -579,8 +579,9 @@ private:
 public:
     BPTree(const char* filename, const char* filename_log): memo(filename, filename_log, isNew) {
         if (isNew) {
-            root = -1;
-            head = -1;
+            Meta *tmp = reinterpret_cast<Meta*>(memo.GetMeta());
+            tmp -> root = root = -1;
+            tmp -> head = head = -1;
         } else {
             Meta *tmp = reinterpret_cast<Meta*>(memo.GetMeta());
             root = tmp -> root;
