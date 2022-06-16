@@ -27,7 +27,11 @@ Team name 組名: 陆零叁贰壹
 
   - the file IO (including the Least Recently Used cache)
 
-    文件輸入輸出（包括最近最少使用快取）
+    檔案輸入輸出（包括最近最少使用快取）
+
+  - garbage collection on file
+
+    檔案垃圾回收
 
   - rollback
 
@@ -44,13 +48,19 @@ Team name 組名: 陆零叁贰壹
 
 ## Progress 進度
 
-- Correctness Test & Pressure Test: *Done* 2022-06-16
-
+- Correctness Test & Pressure Test: *Done* 2022-06-16 commit
+  
   正確性測試及壓力測試: 於 2022-06-16 **完成**
+
+  Commit:
+  [ffc06eadb86205890788e26e6ac211ac6af810f9](https://github.com/LauYeeYu/Train-Ticket-System/commit/ffc06eadb86205890788e26e6ac211ac6af810f9)
 
 - Rollback Test: *Done* 2022-06-16
 
   回滾測試: 於 2022-06-16 **完成**
+
+  Commit:
+  [0af8b98e0d93c0153b3070542938d9731f4e87b0](https://github.com/LauYeeYu/Train-Ticket-System/commit/0af8b98e0d93c0153b3070542938d9731f4e87b0)
 
 - Bonus: *Partially Done*
   - Cache: Done (Least Recently Used Algorithm)
@@ -60,6 +70,10 @@ Team name 組名: 陆零叁贰壹
   - File Garbage Collection: Done
 
     檔案垃圾回收: **完成**
+
+  - Graphic User Interface: *In Progress*
+
+    圖形界面: **尚在進行中**
 
 ## 系统说明
 
