@@ -18,14 +18,14 @@
 #ifndef TICKET_SYSTEM_INCLUDE_MEMORY_H
 #define TICKET_SYSTEM_INCLUDE_MEMORY_H
 
-#ifdef ROLLBACK
-
 #include <fstream>
 #include <iostream>
 #include <cstring>
 
 #include "rollback_manager.h"
 #include "linked_hash_map.h"
+
+#ifdef ROLLBACK
 
 template<int kBlockSize>
 class MemoryManager {

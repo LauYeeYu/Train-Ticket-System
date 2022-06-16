@@ -17,14 +17,14 @@
 #ifndef TICKET_SYSTEM_INCLUDE_BP_TREE_H
 #define TICKET_SYSTEM_INCLUDE_BP_TREE_H
 
-#ifdef ROLLBACK
-
 #include <iostream>
 #include <functional>
 
 #include "memory.h"
 #include "vector.h"
 #include "utility.h"
+
+#ifdef ROLLBACK
 
 template <class KeyT, class ValT,
     class KeyCompare = std::less<KeyT>,

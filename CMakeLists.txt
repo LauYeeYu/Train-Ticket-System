@@ -4,7 +4,7 @@ include(CTest)
 
 set(CMAKE_CXX_STANDARD 17)
 
-set(CMAKE_CXX_FLAGS "-Ofast -DBOOST")
+set(CMAKE_CXX_FLAGS "-Ofast -DBOOST -DROLLBACK")
 
 set(TICKET_INCLUDES
         include)
