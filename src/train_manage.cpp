@@ -258,6 +258,11 @@ void TrainManage::TryBuy(ParameterTable& input, UserManage& userManage) {
         std::cout << "[" << input.TimeStamp() << "] -1" << ENDL;
         return;
     }
+    int n = StringToInt(input['n']);
+    if (n > train.seatNum) {
+        std::cout << "[" << input.TimeStamp() << "] -1" << ENDL;
+        return;
+    }
 
     // find the departure and arrival station
     int departure = 0, arrival = 0;
@@ -292,7 +297,6 @@ void TrainManage::TryBuy(ParameterTable& input, UserManage& userManage) {
     // Now there exist a train that can serve the request
     TrainTicketCount ticketCount = ticketData_.Get(train.ticketData);
     int ticketNum = ticketCount.remained[trainDate.day][departure];
-    int n = StringToInt(input['n']);
     for (int i = departure + 1; i < arrival; ++i) {
         ticketNum = std::min(ticketNum, ticketCount.remained[trainDate.day][i]);
     }
