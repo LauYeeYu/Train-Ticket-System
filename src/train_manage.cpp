@@ -19,7 +19,7 @@
 #include "linked_hash_map.h"
 #include "token_scanner.h"
 #include "train.h"
-#include "utility"
+#include "utility.h"
 #include "vector.h"
 
 bool CanBuyTicket(const TrainTicketCount& ticketCount, int day, int from, int to, int count) {
@@ -122,8 +122,8 @@ void TrainManage::Release(ParameterTable& input) {
     train.released = true;
 
     TrainTicketCount ticketCount;
-    train.ticketData = ticketData_.Add(ticketCount);
 #ifdef ROLLBACK
+    train.ticketData = ticketData_.Add(ticketCount);
     for (int i = 1; i < train.startDate.day; ++i) {
         ticketData_.Add(ticketCount);
     }
@@ -633,7 +633,11 @@ void TrainManage::Refund(ParameterTable& input, UserManage& userManage) {
         }
         ticket = userTicketData_.Get(queuePtr);
     }
+#ifdef ROLLBACK
     head.remained[ticket.index] = queuePtr;
+#else
+    ticketCount.remained[98][ticket.index] = queuePtr;
+#endif
 
     // this node cannot be served, so we need to move to the next node
     long lastPtr = queuePtr;
@@ -652,7 +656,11 @@ void TrainManage::Refund(ParameterTable& input, UserManage& userManage) {
             userTicketData_.Modify(queuePtr, ticket);
 #endif
             for (int i = ticket.from; i < ticket.to; ++i) {
+#ifdef ROLLBACK
                 ticketCount.remained[i] -= ticket.seatNum;
+#else
+                ticketCount.remained[ticket.index][i] -= ticket.seatNum;
+#endif
             }
             queuePtr = nextPtr;
         } else {
@@ -667,8 +675,9 @@ void TrainManage::Refund(ParameterTable& input, UserManage& userManage) {
             queuePtr = ticket.queue;
         }
     }
-    tail.remained[ticket.index] = lastPtr;
+
 #ifdef ROLLBACK
+    tail.remained[ticket.index] = lastPtr;
     ticketData_.Modify(ticket.ticketPosition + sizeof(TrainTicketCount) * ticket.index,
                        ticketCount,
                        input.TimeStamp());
@@ -679,6 +688,7 @@ void TrainManage::Refund(ParameterTable& input, UserManage& userManage) {
                        tail,
                        input.TimeStamp());
 #else
+    ticketCount.remained[99][ticket.index] = lastPtr;
     ticketData_.Modify(ticket.ticketPosition, ticketCount);
 #endif
     std::cout << "[" << input.TimeStamp() << "] 0" << ENDL;
@@ -712,16 +722,28 @@ void TrainManage::QueryTransfer(ParameterTable& input) {
         int tmpDate = date.day - train1.departureTime[startPtr.second].minute / 1440;
         if (tmpDate < train1.startDate.day || tmpDate > train1.endDate.day) continue;
         int startDate = date.day - train1.departureTime[startPtr.second].minute / 1440;
+#ifdef ROLLBACK
         TrainTicketCount ticketCount1 = ticketData_.Get(train1.ticketData + sizeof(TrainTicketCount) * startDate);
+#else
+        TrainTicketCount ticketCount1 = ticketData_.Get(train1.ticketData);
+#endif
 
         for (int j = startPtr.second + 1; j <= train1.stationNum; ++j) {
             stationHash[j] = ToHashPair(train1.stations[j]);
         }
         for (int train2 = 0; train2 < end.Size(); ++train2) {
             if (end[train2].first == startPtr.first) continue; // eliminate the same train
+#ifdef ROLLBACK
             int remained1 = ticketCount1.remained[startPtr.second];
+#else
+            int remained1 = ticketCount1.remained[startDate][startPtr.second];
+#endif
             for (int j = startPtr.second + 1; j <= train1.stationNum; ++j) {
+#ifdef ROLLBACK
                 remained1 = std::min(remained1, ticketCount1.remained[j - 1]);
+#else
+                remained1 = std::min(remained1, ticketCount1.remained[startDate][j - 1]);
+#endif
                 if (!stations2[train2].Contains(stationHash[j])) continue;
                 int stationIndex2 = stations2[train2][stationHash[j]];
                 int arrivalDay1 = date.day - train1.departureTime[startPtr.second].minute / 1440
@@ -823,12 +845,20 @@ void TrainManage::QueryTransfer(ParameterTable& input) {
                 journey2.price = trains[train2].prefixPriceSum[end[train2].second]
                                  - trains[train2].prefixPriceSum[stationIndex2];
                 int index2 = journey2.startDate.day - trains[train2].departureTime[stationIndex2].minute / 1440;
+#ifdef ROLLBACK
                 TrainTicketCount ticketCount2 = ticketData_.Get(trains[train2].ticketData
                     + sizeof(TrainTicketCount) * index2);
                 journey2.seat = ticketCount2.remained[stationIndex2];
                 for (int k = stationIndex2 + 1; k < end[train2].second; ++k) {
                     journey2.seat = std::min(journey2.seat, ticketCount2.remained[k]);
                 }
+#else
+                TrainTicketCount ticketCount2 = ticketData_.Get(trains[train2].ticketData);
+                journey2.seat = ticketCount2.remained[index2][stationIndex2];
+                for (int k = stationIndex2 + 1; k < end[train2].second; ++k) {
+                    journey2.seat = std::min(journey2.seat, ticketCount2.remained[index2][k]);
+                }
+#endif
 
             }
         }

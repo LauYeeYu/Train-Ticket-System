@@ -16,7 +16,6 @@
 
 #include "train.h"
 
-
 bool Date::operator<(const Date& rhs) const {
     return this->day < rhs.day;
 }

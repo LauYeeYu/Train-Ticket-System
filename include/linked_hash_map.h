@@ -20,9 +20,9 @@
 // only for std::equal_to<T> and std::hash<T>
 #include <functional>
 #include <cstddef>
+
 #include "utility.h"
 #include "exceptions.h"
-
 
 using SizeT = long;
 
