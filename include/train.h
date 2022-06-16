@@ -136,8 +136,14 @@ struct Ticket {
     }
 };
 
+#ifdef ROLLBACK
+struct TrainTicketCount {
+    int remained[100];
+};
+#else
 struct TrainTicketCount {
     int remained[100][100];
 };
+#endif
 
 #endif // TICKET_SYSTEM_INCLUDE_TRAIN_H
