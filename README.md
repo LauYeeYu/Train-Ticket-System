@@ -29,6 +29,10 @@ Team name 組名: 陆零叁贰壹
 
     文件輸入輸出（包括最近最少使用快取）
 
+  - rollback
+
+    回滾
+
 - [LauYeeYu](https://github.com/LauYeeYu) 刘祎禹
   - the logical part of the system
 
@@ -43,6 +47,10 @@ Team name 組名: 陆零叁贰壹
 - Correctness Test & Pressure Test: *Done* 2022-06-16
 
   正確性測試及壓力測試: 於 2022-06-16 **完成**
+
+- Rollback Test: *Done* 2022-06-16
+
+  回滾測試: 於 2022-06-16 **完成**
 
 - Bonus: *Partially Done*
   - Cache: Done (Least Recently Used Algorithm)
@@ -428,6 +436,24 @@ Team name 組名: 陆零叁贰壹
   退票成功：`0`
 
   退票失败：`-1`
+
+##### [R] `rollback` (NEED to enable rollback feature)
+
+- 参数列表
+
+  `-t`
+
+- 说明
+
+  将所有用户下线，并将数据库回滚到时间戳为`-t`时刻的状态。
+
+  仅在回滚测试点中出现。
+
+- 返回值
+
+  回滚成功：`0`
+
+  回滚失败：`-1`
 
 ##### [R] `clean`
 
