@@ -92,7 +92,11 @@ void UserManage::AddUser(ParameterTable& input) {
 
 void UserManage::Adduser_(User& user, long timeStamp) {
     long position = userData_.Add(user);
+#ifdef ROLLBACK
+    userIndex_.Insert(ToHashPair(user.userName), position, timeStamp);
+#else
     userIndex_.Insert(ToHashPair(user.userName), position);
+#endif
 }
 
 void UserManage::Login(ParameterTable& input) {
@@ -191,7 +195,11 @@ void UserManage::Modify(ParameterTable& input) {
         user.mailAddress = input['m'];
     }
 
+#ifdef ROLLBACK
+    userData_.Modify(position, user, input.TimeStamp());
+#else
     userData_.Modify(position, user);
+#endif
     if (loginPool_.Contains(input['u'])) {
         loginPool_.ModifyProfile(user);
     }
@@ -210,7 +218,11 @@ long UserManage::AddOrder(const std::string& name, Ticket& ticket,
     User user = userData_.Get(position);
     ticket.last = user.orderInfo;
     user.orderInfo = trainManage.AddOrder(ticket, timeStamp);
+#ifdef ROLLBACK
+    userData_.Modify(position, user, timeStamp);
+#else
     userData_.Modify(position, user);
+#endif
     if (loginPool_.Contains(name)) {
         loginPool_.ModifyProfile(user);
     }
@@ -230,3 +242,11 @@ void UserManage::Clear() {
     userIndex_.Clear();
     loginPool_.Clear();
 }
+
+#ifdef ROLLBACK
+void UserManage::RollBack(long timeStamp) {
+    loginPool_.Clear();
+    userIndex_.RollBack(timeStamp);
+    userData_.RollBack(timeStamp);
+}
+#endif

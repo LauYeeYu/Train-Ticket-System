@@ -52,16 +52,26 @@ public:
 
     void Refund(ParameterTable& input, UserManage& userManage);
 
-    //void RollBack(long timeStamp);
+#ifdef ROLLBACK
+    void RollBack(long timeStamp);
+#endif
 
     void Clear();
 
 private:
+#ifdef ROLLBACK
+    BPTree<HashPair, long>        trainIndex_   = BPTree<HashPair, long>("train_index", "train_index_log");
+    TileStorage<Train>            trainData_    = TileStorage<Train>("train_data", "train_data_log");
+    TileStorage<TrainTicketCount> ticketData_   = TileStorage<TrainTicketCount>("ticket_data", "ticket_data_log");
+    BPTree<HashPair, StationPair> stationIndex_ = BPTree<HashPair, StationPair>("station_index", "station_index_log");
+    TileStorage<Ticket>         userTicketData_ = TileStorage<Ticket>("user_ticket_data", "user_ticket_data_log");
+#else
     BPTree<HashPair, long>        trainIndex_     = BPTree<HashPair, long>("train_index");
     TileStorage<Train>            trainData_      = TileStorage<Train>("train_data");
     TileStorage<TrainTicketCount> ticketData_     = TileStorage<TrainTicketCount>("ticket_data");
     BPTree<HashPair, StationPair> stationIndex_   = BPTree<HashPair, StationPair>("station_index");
     TileStorage<Ticket>           userTicketData_ = TileStorage<Ticket>("user_ticket_data");
+#endif
 };
 
 #endif // TICKET_SYSTEM_INCLUDE_TRAIN_MANAGE_H

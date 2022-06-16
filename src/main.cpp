@@ -78,7 +78,18 @@ bool Request(ParameterTable& parameterTable, UserManage& users, TrainManage& tra
     } else if (parameterTable.GetCommand() == "refund_ticket") {
         trains.Refund(parameterTable, users);
     } else if (parameterTable.GetCommand() == "rollback") {
-        // NOT SUPPORTED AT THIS MOMENT
+#ifdef ROLLBACK
+        int rollbackTimeStamp = StringToInt(parameterTable['t']);
+        if (rollbackTimeStamp > parameterTable.TimeStamp()) {
+            std::cout << "[" << parameterTable.TimeStamp() << "] -1" << std::endl;
+        } else {
+            trains.RollBack(parameterTable.TimeStamp());
+            users.RollBack(parameterTable.TimeStamp());
+            std::cout << "[" << parameterTable.TimeStamp() << "] 0" << std::endl;
+        }
+#else
+        std::cout << "[" << parameterTable.TimeStamp() << "] Rollback is NOT supported!" << std::endl;
+#endif
     } else if (parameterTable.GetCommand() == "clean") {
         users.Clear();
         trains.Clear();

@@ -30,7 +30,12 @@ public:
      * position of deleted nodes should be read from the very beginning of
      * the file.
      */
+#ifdef ROLLBACK
+    explicit TileStorage(const char* fileName, const char* logFileName)
+        : memoryManager_(fileName, logFileName, newFile_) {}
+#else
     explicit TileStorage(const char* fileName) : memoryManager_(fileName, newFile_) {}
+#endif
 
     /**
      * Set the data at very beginning to be deletedNodes_;
@@ -49,31 +54,58 @@ public:
         return memoryManager_.Last;
     }
 
+#ifdef ROLLBACK
+    void Delete(Ptr pos, long timeStamp) {
+        memoryManager_.ReadNode(pos, timeStamp);
+        memoryManager_.DelNode(pos);
+    }
+#else
     void Delete(Ptr pos) {
         memoryManager_.DelNode(pos);
     }
+#endif
 
     /**
      * Get the value at the position.
      * @return the data at the position
      */
+#ifdef ROLLBACK
+    const T& Get(Ptr position) {
+        char* data = memoryManager_.ReadNode(position, -1);
+        return *(reinterpret_cast<const T*>(data));
+    }
+#else
     const T& Get(Ptr position) {
         char* data = memoryManager_.ReadNode(position);
         return *(reinterpret_cast<const T*>(data));
     }
+#endif
 
     /**
      * Modify the data at the position with the newValue and the time stamp.
      * @return the position of the new value
      */
+#ifdef ROLLBACK
+    void Modify(Ptr position, const T& newValue, long timeStamp) {
+        char* data = memoryManager_.ReadNode(position, timeStamp);
+        memcpy(data, &newValue, sizeof(T));
+    }
+#else
     void Modify(Ptr position, const T& newValue) {
         char* data = memoryManager_.ReadNode(position);
         memcpy(data, &newValue, sizeof(T));
     }
+#endif
 
     void Clear() {
         memoryManager_.Clear();
     }
+
+#ifdef ROLLBACK
+    void RollBack(long timeStamp) {
+        memoryManager_.RollBack(timeStamp);
+    }
+#endif
 
 private:
     MemoryManager<sizeof(T)> memoryManager_;

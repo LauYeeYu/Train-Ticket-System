@@ -182,7 +182,8 @@ public:
         trash_head = new Trash(pos, trash_head);
     }
 
-    char* ReadNode(Ptr pos, long timeStamp) { // timeStamp >= 0 means the node will be modified
+    // timeStamp >= 0 means the node will be modified
+    char* ReadNode(Ptr pos, long timeStamp) {
         MemNode* cur = mp[pos];
         if (cur != nullptr) {
             if (head != cur) {

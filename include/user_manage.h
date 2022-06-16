@@ -76,7 +76,9 @@ public:
 
     long AddOrder(const std::string& name, Ticket& ticket, long timeStamp, TrainManage& trainManage);
 
-    //void RollBack(long time);
+#ifdef ROLLBACK
+    void RollBack(long timeStamp);
+#endif
 
     void Clear();
 
@@ -87,8 +89,13 @@ private:
 
     LoginPool loginPool_;
 
+#ifdef ROLLBACK
+    BPTree<HashPair, long> userIndex_ = BPTree<HashPair, long>("user_index", "user_index_log");
+    TileStorage<User>      userData_  = TileStorage<User>("user_data", "user_data_log");
+#else
     BPTree<HashPair, long> userIndex_ = BPTree<HashPair, long>("user_index");
     TileStorage<User>      userData_  = TileStorage<User>("user_data");
+#endif
 };
 
 #endif // TICKET_SYSTEM_INCLUDE_USER_MANAGE_H

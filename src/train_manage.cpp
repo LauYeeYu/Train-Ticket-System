@@ -74,7 +74,11 @@ void TrainManage::Add(ParameterTable& input) {
     train.type = input['y'][0];
 
     long position = trainData_.Add(train);
+#ifdef ROLLBACK
+    trainIndex_.Insert(ToHashPair(train.trainID), position, input.TimeStamp());
+#else
     trainIndex_.Insert(ToHashPair(train.trainID), position);
+#endif
     std::cout << "[" << input.TimeStamp() << "] 0" << ENDL;
 }
 
@@ -89,8 +93,13 @@ void TrainManage::Delete(ParameterTable& input) {
         std::cout << "[" << input.TimeStamp() << "] -1" << ENDL;
         return;
     }
+#ifdef ROLLBACK
+    trainData_.Delete(position, input.TimeStamp());
+    trainIndex_.Erase(ToHashPair(input['i']), input.TimeStamp());
+#else
     trainData_.Delete(position);
     trainIndex_.Erase(ToHashPair(input['i']));
+#endif
     std::cout << "[" << input.TimeStamp() << "] 0" << ENDL;
 }
 
@@ -120,10 +129,20 @@ void TrainManage::Release(ParameterTable& input) {
 
     train.ticketData = ticketData_.Add(ticketCount);
     for (int i = 1; i <= train.stationNum; ++i) {
+#ifdef ROLLBACK
+        stationIndex_.Insert(ToHashPair(train.stations[i]),
+                                        Pair<long, long>(position, i),
+                             input.TimeStamp());
+#else
         stationIndex_.Insert(ToHashPair(train.stations[i]), Pair<long, long>(position, i));
+#endif
     }
 
+#ifdef ROLLBACK
+    trainData_.Modify(position, train, input.TimeStamp());
+#else
     trainData_.Modify(position, train);
+#endif
 
     std::cout << "[" << input.TimeStamp() << "] 0" << ENDL;
 }
@@ -306,7 +325,11 @@ void TrainManage::TryBuy(ParameterTable& input, UserManage& userManage) {
         for (int i = departure; i < arrival; ++i) {
             ticketCount.remained[trainDate.day][i] -= n;
         }
+#ifdef ROLLBACK
+        ticketData_.Modify(train.ticketData, ticketCount, input.TimeStamp());
+#else
         ticketData_.Modify(train.ticketData, ticketCount);
+#endif
         Ticket ticket;
         ticket.trainID = train.trainID;
         ticket.startStation = train.stations[departure];
@@ -349,14 +372,22 @@ void TrainManage::TryBuy(ParameterTable& input, UserManage& userManage) {
                 long lastQueuePtr = ticketCount.remained[99][trainDate.day];
                 Ticket lastQueue = userTicketData_.Get(lastQueuePtr);
                 lastQueue.queue = userManage.AddOrder(input['u'], ticket, input.TimeStamp(), *this);
+#ifdef ROLLBACK
+                userTicketData_.Modify(lastQueuePtr, lastQueue, input.TimeStamp());
+#else
                 userTicketData_.Modify(lastQueuePtr, lastQueue);
+#endif
                 ticketCount.remained[99][trainDate.day] = lastQueue.queue;
             } else {
                 ticketCount.remained[99][trainDate.day]
                     = userManage.AddOrder(input['u'], ticket, input.TimeStamp(), *this);
                 ticketCount.remained[98][trainDate.day] = ticketCount.remained[99][trainDate.day];
             }
+#ifdef ROLLBACK
+            ticketData_.Modify(train.ticketData, ticketCount, input.TimeStamp());
+#else
             ticketData_.Modify(train.ticketData, ticketCount);
+#endif
             std::cout << "[" << input.TimeStamp() << "] queue" << ENDL;
         }
     }
@@ -423,12 +454,21 @@ void TrainManage::Refund(ParameterTable& input, UserManage& userManage) {
     }
     if (ticket.state == TicketState::pending) { // in the pending list, not need to modify the train data
         ticket.state = TicketState::refunded;
+#ifdef ROLLBACK
+        userTicketData_.Modify(orderPtr, ticket, input.TimeStamp());
+#else
         userTicketData_.Modify(orderPtr, ticket);
+#endif
         std::cout << "[" << input.TimeStamp() << "] 0" << ENDL;
+
         return;
     }
     ticket.state = TicketState::refunded;
+#ifdef ROLLBACK
+    userTicketData_.Modify(orderPtr, ticket, input.TimeStamp());
+#else
     userTicketData_.Modify(orderPtr, ticket);
+#endif
     TrainTicketCount ticketCount = ticketData_.Get(ticket.ticketPosition);
     for (int i = ticket.from; i < ticket.to; ++i) {
         ticketCount.remained[ticket.index][i] += ticket.seatNum;
@@ -439,7 +479,11 @@ void TrainManage::Refund(ParameterTable& input, UserManage& userManage) {
     long nextPtr;
     // Nothing to pend
     if (queuePtr == -1) {
+#ifdef ROLLBACK
+        ticketData_.Modify(ticket.ticketPosition, ticketCount, input.TimeStamp());
+#else
         ticketData_.Modify(ticket.ticketPosition, ticketCount);
+#endif
         std::cout << "[" << input.TimeStamp() << "] 0" << ENDL;
         return;
     }
@@ -451,7 +495,11 @@ void TrainManage::Refund(ParameterTable& input, UserManage& userManage) {
         ticket.state = TicketState::bought;
         nextPtr = ticket.queue;
         ticket.queue = -1;
+#ifdef ROLLBACK
+        userTicketData_.Modify(queuePtr, ticket, input.TimeStamp());
+#else
         userTicketData_.Modify(queuePtr, ticket);
+#endif
         for (int i = ticket.from; i < ticket.to; ++i) {
             ticketCount.remained[ticket.index][i] -= ticket.seatNum;
         }
@@ -459,7 +507,11 @@ void TrainManage::Refund(ParameterTable& input, UserManage& userManage) {
         if (queuePtr == -1) {
             ticketCount.remained[98][ticket.index] = -1;
             ticketCount.remained[99][ticket.index] = -1;
+#ifdef ROLLBACK
+            ticketData_.Modify(ticket.ticketPosition, ticketCount, input.TimeStamp());
+#else
             ticketData_.Modify(ticket.ticketPosition, ticketCount);
+#endif
             std::cout << "[" << input.TimeStamp() << "] 0" << ENDL;
             return;
         }
@@ -478,7 +530,11 @@ void TrainManage::Refund(ParameterTable& input, UserManage& userManage) {
             ticket.state = TicketState::bought;
             nextPtr = ticket.queue;
             ticket.queue = -1;
+#ifdef ROLLBACK
+            userTicketData_.Modify(queuePtr, ticket, input.TimeStamp());
+#else
             userTicketData_.Modify(queuePtr, ticket);
+#endif
             for (int i = ticket.from; i < ticket.to; ++i) {
                 ticketCount.remained[ticket.index][i] -= ticket.seatNum;
             }
@@ -486,13 +542,21 @@ void TrainManage::Refund(ParameterTable& input, UserManage& userManage) {
         } else {
             Ticket lastTicket = userTicketData_.Get(lastPtr);
             lastTicket.queue = queuePtr;
+#ifdef ROLLBACK
+            userTicketData_.Modify(lastPtr, lastTicket, input.TimeStamp());
+#else
             userTicketData_.Modify(lastPtr, lastTicket);
+#endif
             lastPtr = queuePtr;
             queuePtr = ticket.queue;
         }
     }
     ticketCount.remained[99][ticket.index] = lastPtr;
+#ifdef ROLLBACK
+    ticketData_.Modify(ticket.ticketPosition, ticketCount, input.TimeStamp());
+#else
     ticketData_.Modify(ticket.ticketPosition, ticketCount);
+#endif
     std::cout << "[" << input.TimeStamp() << "] 0" << ENDL;
 }
 
@@ -653,3 +717,13 @@ void TrainManage::QueryTransfer(ParameterTable& input) {
         std::cout << "[" << input.TimeStamp() << "] 0" << ENDL;
     }
 }
+
+#ifdef ROLLBACK
+void TrainManage::RollBack(long timeStamp) {
+    trainIndex_.RollBack(timeStamp);
+    trainData_.RollBack(timeStamp);
+    ticketData_.RollBack(timeStamp);
+    stationIndex_.RollBack(timeStamp);
+    userTicketData_.RollBack(timeStamp);
+}
+#endif
