@@ -83,8 +83,8 @@ bool Request(ParameterTable& parameterTable, UserManage& users, TrainManage& tra
         if (rollbackTimeStamp > parameterTable.TimeStamp()) {
             std::cout << "[" << parameterTable.TimeStamp() << "] -1" << std::endl;
         } else {
-            trains.RollBack(parameterTable.TimeStamp());
-            users.RollBack(parameterTable.TimeStamp());
+            trains.RollBack(rollbackTimeStamp);
+            users.RollBack(rollbackTimeStamp);
             std::cout << "[" << parameterTable.TimeStamp() << "] 0" << std::endl;
         }
 #else
@@ -117,4 +117,13 @@ void Init() {
     TryCreateFile("ticket_data");
     TryCreateFile("station_index");
     TryCreateFile("user_ticket_data");
+#ifdef ROLLBACK
+    TryCreateFile("user_index_log");
+    TryCreateFile("user_data_log");
+    TryCreateFile("train_index_log");
+    TryCreateFile("train_data_log");
+    TryCreateFile("ticket_data_log");
+    TryCreateFile("station_index_log");
+    TryCreateFile("user_ticket_data_log");
+#endif // ROLLBACK
 }
