@@ -432,6 +432,10 @@ void TrainManage::Refund(ParameterTable& input, UserManage& userManage) {
 
     // Get the pointer to the order
     long orderPtr = userManage.GetUser(input['u']).orderInfo;
+    if (orderPtr == -1) {
+        std::cout << "[" << input.TimeStamp() << "] -1" << ENDL;
+        return;
+    }
     int number;
     if (input['n'].empty()) number = 0;
     else number = StringToInt(input['n']) - 1;
