@@ -540,6 +540,7 @@ private:
             if (rt -> siz == 0) {
                 memo.DelNode(root);
                 root = -1;
+                head = -1;
             }
         } else {
             if (!reinterpret_cast<NleafNode*>(tmp) -> Erase_(key, this)) {
@@ -553,10 +554,10 @@ private:
         return true;
     }
 
-    void ChangeRoot() {
+    void ChangeRoot(Ptr root_, Ptr head_) {
         Meta *tmp = reinterpret_cast<Meta*>(memo.GetMeta());
-        tmp -> root = root;
-        tmp -> head = head;
+        tmp -> root = root_;
+        tmp -> head = head_;
         memo.UpdateMeta(timeStamp);
     }
 
@@ -618,25 +619,28 @@ public:
 
     void Insert(const KeyT &key, const ValT &val, long timeStamp_) {
         timeStamp = timeStamp_;
-        Ptr pre_root = root;
+        Ptr pre_root = root, pre_head = head;
         Insert_(key, val);
         if (root != pre_root) {
-            ChangeRoot();
+            ChangeRoot(pre_root, pre_head);
         }
     }
 
     void Erase(const KeyT &key, long timeStamp_) {
         timeStamp = timeStamp_;
-        Ptr pre_root = root;
+        Ptr pre_root = root, pre_head = head;
         Erase_(key);
         if (root != pre_root) {
-            ChangeRoot();
+            ChangeRoot(pre_root, pre_head);
         }
     }
 
     void RollBack(long timeStamp) {
-        memo.RollBack(timeStamp);
         Meta *tmp = reinterpret_cast<Meta*>(memo.GetMeta());
+        tmp -> root = root;
+        tmp -> head = head;
+        memo.RollBack(timeStamp);
+        tmp = reinterpret_cast<Meta*>(memo.GetMeta());
         root = tmp -> root;
         head = tmp -> head;
     }

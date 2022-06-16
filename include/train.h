@@ -69,7 +69,7 @@ struct Train {
     long ticketData = -1;
     int  stationNum;
     int  seatNum;
-    int  prefixPriceSum[101];
+    long prefixPriceSum[101];
     Time departureTime[101];
     Time arrivalTime[101];
     Date startDate, endDate;
@@ -113,8 +113,8 @@ struct Ticket {
     Time endTime;
     long trainPosition;
     long ticketPosition;
+    long price;
     int  index;
-    int  price;
     int  seatNum;
     int  from, to;
     TicketState state; // 1 for bought, 0 for queuing, -1 for refunded
