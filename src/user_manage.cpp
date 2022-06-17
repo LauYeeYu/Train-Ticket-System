@@ -68,20 +68,39 @@ void UserManage::AddUser(ParameterTable& input) {
         user.mailAddress = input['m'];
         user.privilege = 10;
         Adduser_(user, input.TimeStamp());
+#ifdef PRETTY_PRINT
+        std::cout << "[" << input.TimeStamp() << "] User "
+                  << user.userName << " added successfully." << std::endl;
+#else
         std::cout << "[" << input.TimeStamp() << "] 0" << ENDL;
+#endif // PRETTY_PRINT
         return;
     }
 
     if (!loginPool_.Contains(input['c'])) {
+#ifdef PRETTY_PRINT
+        std::cout << "[" << input.TimeStamp() << "] Add failed: user "
+                  << input['c'] << " hasn't logged in yet." << std::endl;
+#else
         std::cout << "[" << input.TimeStamp() << "] -1" << ENDL;
+#endif // PRETTY_PRINT
         return;
     }
     if (user.privilege >= loginPool_.GetData(input['c']).privilege) {
+#ifdef PRETTY_PRINT
+        std::cout << "[" << input.TimeStamp() << "] Add failed: unauthorized operation." << std::endl;
+#else
         std::cout << "[" << input.TimeStamp() << "] -1" << ENDL;
+#endif // PRETTY_PRINT
         return;
     }
     if (userIndex_.Contains(ToHashPair(input['u']))) {
+#ifdef PRETTY_PRINT
+        std::cout << "[" << input.TimeStamp() << "] Add failed: user "
+                  << input['u'] << " already exists." << std::endl;
+#else
         std::cout << "[" << input.TimeStamp() << "] -1" << ENDL;
+#endif // PRETTY_PRINT
         return;
     }
 
@@ -91,7 +110,12 @@ void UserManage::AddUser(ParameterTable& input) {
     user.mailAddress = input['m'];
     Adduser_(user, input.TimeStamp());
 
+#ifdef PRETTY_PRINT
+    std::cout << "[" << input.TimeStamp() << "] User "
+              << user.userName << " added successfully." << std::endl;
+#else
     std::cout << "[" << input.TimeStamp() << "] 0" << ENDL;
+#endif // PRETTY_PRINT
 }
 
 void UserManage::Adduser_(User& user, long timeStamp) {
@@ -100,47 +124,85 @@ void UserManage::Adduser_(User& user, long timeStamp) {
     userIndex_.Insert(ToHashPair(user.userName), position, timeStamp);
 #else
     userIndex_.Insert(ToHashPair(user.userName), position);
-#endif
+#endif // ROLLBACK
 }
 
 void UserManage::Login(ParameterTable& input) {
     if (loginPool_.Contains(input['u'])) {
+#ifdef PRETTY_PRINT
+        std::cout << "[" << input.TimeStamp() << "] Login failed: user "
+                  << input['u'] << " has already logged in." << std::endl;
+#else
         std::cout << "["<< input.TimeStamp() << "] -1" << ENDL;
+#endif // PRETTY_PRINT
         return;
     }
 
     if (!userIndex_.Contains(ToHashPair(input['u']))) {
+#ifdef PRETTY_PRINT
+        std::cout << "[" << input.TimeStamp() << "] Login failed: user "
+                  << input['u'] << " doesn't exist." << std::endl;
+#else
         std::cout << "["<< input.TimeStamp() << "] -1" << ENDL;
+#endif // PRETTY_PRINT
         return;
     }
 
     long position = userIndex_.Find();
     User user = userData_.Get(position);
     if (user.password != ToHashPair(input['p'])) {
+#ifdef PRETTY_PRINT
+        std::cout << "[" << input.TimeStamp() << "] Login failed: incorrect password."
+                  << std::endl;
+#else
         std::cout << "["<< input.TimeStamp() << "] -1" << ENDL;
+#endif // PRETTY_PRINT
         return;
     }
     loginPool_.Login(user);
+#ifdef PRETTY_PRINT
+    std::cout << "[" << input.TimeStamp() << "] Login successfully." << std::endl;
+#else
     std::cout << "["<< input.TimeStamp() << "] 0" << ENDL;
+#endif // PRETTY_PRINT
 }
 
 void UserManage::Logout(ParameterTable& input) {
     if (!loginPool_.Contains(input['u'])) {
+#ifdef PRETTY_PRINT
+        std::cout << "[" << input.TimeStamp() << "] Logout failed: user "
+                  << input['u'] << " hasn't logged in yet." << std::endl;
+#else
         std::cout << "["<< input.TimeStamp() << "] -1" << ENDL;
+#endif // PRETTY_PRINT
         return;
     }
     loginPool_.Logout(static_cast<FixedString<20>>(input['u']));
+#ifdef PRETTY_PRINT
+    std::cout << "[" << input.TimeStamp() << "] Logout successfully." << std::endl;
+#else
     std::cout << "["<< input.TimeStamp() << "] 0" << ENDL;
+#endif // PRETTY_PRINT
 }
 
 void UserManage::Query(ParameterTable& input) {
     if (!loginPool_.Contains(input['c'])) {
+#ifdef PRETTY_PRINT
+        std::cout << "[" << input.TimeStamp() << "] Query failed: user "
+                  << input['c'] << " hasn't logged in yet." << std::endl;
+#else
         std::cout << "["<< input.TimeStamp() << "] -1" << ENDL;
+#endif // PRETTY_PRINT
         return;
     }
 
     if (!userIndex_.Contains(ToHashPair(input['u']))) {
+#ifdef PRETTY_PRINT
+        std::cout << "[" << input.TimeStamp() << "] Query failed: target user "
+                  << input['u'] << " doesn't exist." << std::endl;
+#else
         std::cout << "["<< input.TimeStamp() << "] -1" << ENDL;
+#endif // PRETTY_PRINT
         return;
     }
 
@@ -151,7 +213,12 @@ void UserManage::Query(ParameterTable& input) {
     if (user.privilege > operationUser.privilege ||
        (user.privilege == operationUser.privilege &&
        input['c'] != input['u'])) {
+#ifdef PRETTY_PRINT
+        std::cout << "[" << input.TimeStamp()
+                  << "] Query failed: unauthorized operation." << std::endl;
+#else
         std::cout << "["<< input.TimeStamp() << "] -1" << ENDL;
+#endif // PRETTY_PRINT
         return;
     }
     std::cout << "[" << input.TimeStamp() << "] "
@@ -161,12 +228,22 @@ void UserManage::Query(ParameterTable& input) {
 
 void UserManage::Modify(ParameterTable& input) {
     if (!loginPool_.Contains(input['c'])) {
+#ifdef PRETTY_PRINT
+        std::cout << "[" << input.TimeStamp() << "] Modify failed: user "
+                  << input['c'] << " hasn't logged in yet." << std::endl;
+#else
         std::cout << "["<< input.TimeStamp() << "] -1" << ENDL;
+#endif // PRETTY_PRINT
         return;
     }
 
     if (!userIndex_.Contains(ToHashPair(input['u']))) {
+#ifdef PRETTY_PRINT
+        std::cout << "[" << input.TimeStamp() << "] Modify failed: target user "
+                  << input['u'] << " doesn't exist." << std::endl;
+#else
         std::cout << "["<< input.TimeStamp() << "] -1" << ENDL;
+#endif // PRETTY_PRINT
         return;
     }
 
@@ -177,14 +254,25 @@ void UserManage::Modify(ParameterTable& input) {
     if (user.privilege > operationUser.privilege ||
         (user.privilege == operationUser.privilege &&
          input['c'] != input['u'])) {
+#ifdef PRETTY_PRINT
+        std::cout << "[" << input.TimeStamp()
+                  << "] Modify failed: unauthorized operation." << std::endl;
+#else
         std::cout << "["<< input.TimeStamp() << "] -1" << ENDL;
+#endif // PRETTY_PRINT
         return;
     }
 
     if (!input['g'].empty()) {
         int privilege = StringToInt(input['g']);
         if (privilege >= operationUser.privilege) {
+#ifdef PRETTY_PRINT
+            std::cout << "[" << input.TimeStamp()
+                      << "] Modify failed: privilege is higher than operating user."
+                      << std::endl;
+#else
             std::cout << "["<< input.TimeStamp() << "] -1" << ENDL;
+#endif // PRETTY_PRINT
             return;
         }
         user.privilege = privilege;
@@ -203,7 +291,7 @@ void UserManage::Modify(ParameterTable& input) {
     userData_.Modify(position, user, input.TimeStamp());
 #else
     userData_.Modify(position, user);
-#endif
+#endif // ROLLBACK
     if (loginPool_.Contains(input['u'])) {
         loginPool_.ModifyProfile(user);
     }
@@ -226,7 +314,7 @@ long UserManage::AddOrder(const std::string& name, Ticket& ticket,
     userData_.Modify(position, user, timeStamp);
 #else
     userData_.Modify(position, user);
-#endif
+#endif // ROLLBACK
     if (loginPool_.Contains(name)) {
         loginPool_.ModifyProfile(user);
     }
@@ -253,4 +341,4 @@ void UserManage::RollBack(long timeStamp) {
     userIndex_.RollBack(timeStamp);
     userData_.RollBack(timeStamp);
 }
-#endif
+#endif // ROLLBACK

@@ -81,15 +81,27 @@ bool Request(ParameterTable& parameterTable, UserManage& users, TrainManage& tra
 #ifdef ROLLBACK
         int rollbackTimeStamp = StringToInt(parameterTable['t']);
         if (rollbackTimeStamp > parameterTable.TimeStamp()) {
-            std::cout << "[" << parameterTable.TimeStamp() << "] -1" << std::endl;
+#ifdef PRETTY_PRINT
+            std::cout << "[" << parameterTable.TimeStamp()
+                      << "] Rollback failed: time stamp is newer than the current time stamp."
+                      << std::endl;
+#else
+            std::cout << "[" << parameterTable.TimeStamp() << "] -1" << ENDL;
+#endif // PRETTY_PRINT
         } else {
             trains.RollBack(rollbackTimeStamp);
             users.RollBack(rollbackTimeStamp);
-            std::cout << "[" << parameterTable.TimeStamp() << "] 0" << std::endl;
+#ifdef PRETTY_PRINT
+            std::cout << "[" << parameterTable.TimeStamp()
+                      << "] Rollback succeed: system have rolled back to "
+                      << rollbackTimeStamp << std::endl;
+#else
+            std::cout << "[" << parameterTable.TimeStamp() << "] 0" << ENDL;
+#endif // PRETTY_PRINT
         }
 #else
         std::cout << "[" << parameterTable.TimeStamp() << "] Rollback is NOT supported!" << std::endl;
-#endif
+#endif // ROLLBACK
     } else if (parameterTable.GetCommand() == "clean") {
         users.Clear();
         trains.Clear();

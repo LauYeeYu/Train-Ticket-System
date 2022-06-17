@@ -28,7 +28,7 @@ bool CanBuyTicket(const TrainTicketCount& ticketCount, int day, int from, int to
         if (ticketCount.remained[i] < count) {
 #else
         if (ticketCount.remained[day][i] < count) {
-#endif
+#endif // ROLLBACK
             return false;
         }
     }
@@ -39,7 +39,12 @@ void TrainManage::Add(ParameterTable& input) {
     Train train;
     train.trainID = input['i'];
     if (trainIndex_.Contains(ToHashPair(train.trainID))) {
+#ifdef PRETTY_PRINT
+        std::cout << "[" << input.TimeStamp() << "] Add failed: train "
+                  << train.trainID << " already exists." << std::endl;
+#else
         std::cout << "[" << input.TimeStamp() << "] -1" << ENDL;
+#endif // PRETTY_PRINT
         return;
     }
     train.stationNum = StringToInt(input['n']);
@@ -82,19 +87,37 @@ void TrainManage::Add(ParameterTable& input) {
     trainIndex_.Insert(ToHashPair(train.trainID), position, input.TimeStamp());
 #else
     trainIndex_.Insert(ToHashPair(train.trainID), position);
-#endif
+#endif // ROLLBACK
+
+#ifdef PRETTY_PRINT
+    std::cout << "[" << input.TimeStamp() << "] Train " << train.trainID
+              << " added successfully." << std::endl;
+#else
     std::cout << "[" << input.TimeStamp() << "] 0" << ENDL;
+#endif // PRETTY_PRINT
 }
 
 void TrainManage::Delete(ParameterTable& input) {
     if (!trainIndex_.Contains(ToHashPair(input['i']))) {
+#ifdef PRETTY_PRINT
+        std::cout << "[" << input.TimeStamp() << "] Delete failed: train " << input['i']
+                  << " does not exist." << std::endl;
+#else
         std::cout << "[" << input.TimeStamp() << "] -1" << ENDL;
+#endif // PRETTY_PRINT
         return;
     }
     long position = trainIndex_.Find();
     Train train = trainData_.Get(position);
     if (train.released) {
+#ifdef PRETTY_PRINT
+        std::cout << "[" << input.TimeStamp() << "] Delete failed: train "
+                  << train.trainID
+                  << " has been released. Released Train cannot be deleted!"
+                  << std::endl;
+#else
         std::cout << "[" << input.TimeStamp() << "] -1" << ENDL;
+#endif // PRETTY_PRINT
         return;
     }
 #ifdef ROLLBACK
@@ -103,20 +126,37 @@ void TrainManage::Delete(ParameterTable& input) {
 #else
     trainData_.Delete(position);
     trainIndex_.Erase(ToHashPair(input['i']));
-#endif
+#endif // ROLLBACK
+#ifdef PRETTY_PRINT
+    std::cout << "[" << input.TimeStamp() << "] Train " << train.trainID
+              << " has been deleted successfully." << std::endl;
+#else
     std::cout << "[" << input.TimeStamp() << "] 0" << ENDL;
+#endif // PRETTY_PRINT
 }
 
 void TrainManage::Release(ParameterTable& input) {
     if (!trainIndex_.Contains(ToHashPair(input['i']))) {
+#ifdef PRETTY_PRINT
+        std::cout << "[" << input.TimeStamp() << "] Release failed: train "
+                  << input['i'] << " does not exist." << std::endl;
+#else
         std::cout << "[" << input.TimeStamp() << "] -1" << ENDL;
+#endif // PRETTY_PRINT
         return;
     }
 
     long position = trainIndex_.Find();
     Train train = trainData_.Get(position);
     if (train.released) {
+#ifdef PRETTY_PRINT
+        std::cout << "[" << input.TimeStamp() << "] Release failed: train "
+                  << train.trainID
+                  << " has been released. There no need to release again."
+                  << std::endl;
+#else
         std::cout << "[" << input.TimeStamp() << "] -1" << ENDL;
+#endif // PRETTY_PRINT
         return;
     }
     train.released = true;
@@ -152,7 +192,7 @@ void TrainManage::Release(ParameterTable& input) {
     }
 
     train.ticketData = ticketData_.Add(ticketCount);
-#endif
+#endif // ROLLBACK
 
     for (int i = 1; i <= train.stationNum; ++i) {
 #ifdef ROLLBACK
@@ -161,21 +201,31 @@ void TrainManage::Release(ParameterTable& input) {
                              input.TimeStamp());
 #else
         stationIndex_.Insert(ToHashPair(train.stations[i]), Pair<long, long>(position, i));
-#endif
+#endif // ROLLBACK
     }
 
 #ifdef ROLLBACK
     trainData_.Modify(position, train, input.TimeStamp());
 #else
     trainData_.Modify(position, train);
-#endif
+#endif // ROLLBACK
 
+#ifdef PRETTY_PRINT
+    std::cout << "[" << input.TimeStamp() << "] Train " << train.trainID
+              << " has been released successfully." << std::endl;
+#else
     std::cout << "[" << input.TimeStamp() << "] 0" << ENDL;
+#endif // PRETTY_PRINT
 }
 
 void TrainManage::QueryTrain(ParameterTable& input) {
     if (!trainIndex_.Contains(ToHashPair(input['i']))) {
+#ifdef PRETTY_PRINT
+        std::cout << "[" << input.TimeStamp() << "] Query failed: train "
+                  << input['i'] << " does not exist." << std::endl;
+#else
         std::cout << "[" << input.TimeStamp() << "] -1" << ENDL;
+#endif // PRETTY_PRINT
         return;
     }
 
@@ -194,8 +244,14 @@ void TrainManage::QueryTrain(ParameterTable& input) {
             + sizeof(TrainTicketCount) * day);
 #else
         TrainTicketCount ticketCount = ticketData_.Get(train.ticketData);
-#endif
+#endif // ROLLBACK
+#ifdef PRETTY_PRINT
+        std::cout << "[" << input.TimeStamp() << "] ID: " << train.trainID
+                  << " type: " << train.type << " total " << train.stationNum
+                  << "stations." << std::endl;
+#else
         std::cout << "[" << input.TimeStamp() << "] " << train.trainID << " " << train.type << ENDL;
+#endif // PRETTY_PRINT
 
         std::cout << train.stations[1] << " xx-xx xx:xx -> "
                   << date + train.departureTime[1].minute / 1440 << " "
@@ -205,7 +261,7 @@ void TrainManage::QueryTrain(ParameterTable& input) {
                   << ticketCount.remained[1]
 #else
                   << ticketCount.remained[day][1]
-#endif
+#endif // ROLLBACK
                   << ENDL;
         for (int i = 2; i < train.stationNum; ++i) {
             std::cout << train.stations[i] << " "
@@ -218,7 +274,7 @@ void TrainManage::QueryTrain(ParameterTable& input) {
                       << ticketCount.remained[i]
 #else
                       << ticketCount.remained[day][i]
-#endif
+#endif // ROLLBACK
                       << ENDL;
         }
         std::cout << train.stations[train.stationNum] << " "
@@ -277,7 +333,7 @@ void TrainManage::QueryTicket(ParameterTable& input) {
             for (int j = ticketIndex[i.first] + 1; j < i.second; ++j) {
                 ticketNum = std::min(ticketNum, ticketCount.remained[tmpDate][j]);
             }
-#endif
+#endif // ROLLBACK
             Journey journey;
             journey.trainID = train.trainID;
             journey.startStation = train.stations[ticketIndex[i.first]];
@@ -314,23 +370,44 @@ void TrainManage::QueryTicket(ParameterTable& input) {
 
 void TrainManage::TryBuy(ParameterTable& input, UserManage& userManage) {
     if (!userManage.Logged(input['u'])) {
+#ifdef ROLLBACK
+        std::cout << "[" << input.TimeStamp()
+                  << "] Buy failed: user hasn't logged in yet." << ENDL;
+#else
         std::cout << "[" << input.TimeStamp() << "] -1" << ENDL;
+#endif // ROLLBACK
         return;
     }
     if (!trainIndex_.Contains(ToHashPair(input['i']))) {
+#ifdef PRETTY_PRINT
+        std::cout << "[" << input.TimeStamp()
+                  << "] Buy failed: train doesn't exist." << std::endl;
+#else
         std::cout << "[" << input.TimeStamp() << "] -1" << ENDL;
+#endif // PRETTY_PRINT
         return;
     }
 
     long position = trainIndex_.Find();
     Train train = trainData_.Get(position);
     if (!train.released) {
+#ifdef PRETTY_PRINT
+        std::cout << "[" << input.TimeStamp()
+                  << "] Buy failed: train hasn't been released." << std::endl;
+#else
         std::cout << "[" << input.TimeStamp() << "] -1" << ENDL;
+#endif // PRETTY_PRINT
         return;
     }
     int n = StringToInt(input['n']);
     if (n > train.seatNum) {
+#ifdef PRETTY_PRINT
+        std::cout << "[" << input.TimeStamp()
+                  << "] Buy failed: the required seat number exceeds the total seat number."
+                  << std::endl;
+#else
         std::cout << "[" << input.TimeStamp() << "] -1" << ENDL;
+#endif // PRETTY_PRINT
         return;
     }
 
@@ -342,7 +419,12 @@ void TrainManage::TryBuy(ParameterTable& input, UserManage& userManage) {
         }
     }
     if (departure == 0) {
+#ifdef PRETTY_PRINT
+        std::cout << "[" << input.TimeStamp()
+                  << "] Buy failed: the departure station doesn't exist." << std::endl;
+#else
         std::cout << "[" << input.TimeStamp() << "] -1" << ENDL;
+#endif // PRETTY_PRINT
         return;
     }
     for (int i = departure + 1; i <= train.stationNum; ++i) {
@@ -351,7 +433,12 @@ void TrainManage::TryBuy(ParameterTable& input, UserManage& userManage) {
         }
     }
     if (arrival == 0) {
+#ifdef PRETTY_PRINT
+        std::cout << "[" << input.TimeStamp()
+                  << "] Buy failed: the arrival station doesn't exist." << std::endl;
+#else
         std::cout << "[" << input.TimeStamp() << "] -1" << ENDL;
+#endif // PRETTY_PRINT
         return;
     }
 
@@ -360,7 +447,13 @@ void TrainManage::TryBuy(ParameterTable& input, UserManage& userManage) {
     Date trainDate = date - train.departureTime[departure].minute / 1440;
 
     if (trainDate < train.startDate || trainDate > train.endDate) {
+#ifdef PRETTY_PRINT
+        std::cout << "[" << input.TimeStamp()
+                  << "] Buy failed: the train doesn't run on the required date."
+                  << std::endl;
+#else
         std::cout << "[" << input.TimeStamp() << "] -1" << ENDL;
+#endif // PRETTY_PRINT
         return;
     }
 
@@ -378,7 +471,7 @@ void TrainManage::TryBuy(ParameterTable& input, UserManage& userManage) {
     for (int i = departure + 1; i < arrival; ++i) {
         ticketNum = std::min(ticketNum, ticketCount.remained[trainDate.day][i]);
     }
-#endif
+#endif // ROLLBACK
 
     // the process of purchasing
     if (ticketNum >= n) { // Enough ticket(s)
@@ -394,7 +487,7 @@ void TrainManage::TryBuy(ParameterTable& input, UserManage& userManage) {
             ticketCount.remained[trainDate.day][i] -= n;
         }
         ticketData_.Modify(train.ticketData, ticketCount);
-#endif
+#endif // ROLLBACK
         Ticket ticket;
         ticket.trainID = train.trainID;
         ticket.startStation = train.stations[departure];
@@ -412,10 +505,20 @@ void TrainManage::TryBuy(ParameterTable& input, UserManage& userManage) {
         ticket.state = TicketState::bought;
         ticket.seatNum = n;
         userManage.AddOrder(input['u'], ticket, input.TimeStamp(), *this);
+#ifdef PRETTY_PRINT
+        std::cout << "[" << input.TimeStamp() << "] Price: " << ticket.price * n << std::endl;
+#else
         std::cout << "[" << input.TimeStamp() << "] " << ticket.price * n << ENDL;
+#endif // PRETTY_PRINT
     } else {
         if (input['q'].empty() || input['q'][0] == 'f') {
+#ifdef PRETTY_PRINT
+            std::cout << "[" << input.TimeStamp()
+                      << "] Buy failed: the required seat number exceeds the number of available seats."
+                      << std::endl;
+#else
             std::cout << "[" << input.TimeStamp() << "] -1" << ENDL;
+#endif // PRETTY_PRINT
         } else {
             Ticket ticket;
             ticket.trainID = train.trainID;
@@ -471,8 +574,12 @@ void TrainManage::TryBuy(ParameterTable& input, UserManage& userManage) {
                 ticketCount.remained[98][trainDate.day] = ticketCount.remained[99][trainDate.day];
             }
             ticketData_.Modify(train.ticketData, ticketCount);
-#endif
+#endif // ROLLBACK
+#ifdef PRETTY_PRINT
+            std::cout << "[" << input.TimeStamp() << "] You are in the pending queue." << ENDL;
+#else
             std::cout << "[" << input.TimeStamp() << "] queue" << ENDL;
+#endif // PRETTY_PRINT
         }
     }
 
@@ -484,7 +591,12 @@ long TrainManage::AddOrder(Ticket& ticket, long timeStamp) {
 
 void TrainManage::QueryOrder(ParameterTable& input, UserManage& userManage) {
     if (!userManage.Logged(input['u'])) {
+#ifdef PRETTY_PRINT
+        std::cout << "[" << input.TimeStamp() << "] Query failed: the user hasn't logged in yet."
+                  << std::endl;
+#else
         std::cout << "[" << input.TimeStamp() << "] -1" << ENDL;
+#endif // PRETTY_PRINT
         return;
     }
 
@@ -510,14 +622,24 @@ void TrainManage::Clear() {
 
 void TrainManage::Refund(ParameterTable& input, UserManage& userManage) {
     if (!userManage.Logged(input['u'])) {
+#ifdef PRETTY_PRINT
+        std::cout << "[" << input.TimeStamp() << "] Refund failed: the user hasn't logged in yet."
+                  << std::endl;
+#else
         std::cout << "[" << input.TimeStamp() << "] -1" << ENDL;
+#endif // PRETTY_PRINT
         return;
     }
 
     // Get the pointer to the order
     long orderPtr = userManage.GetUser(input['u']).orderInfo;
     if (orderPtr == -1) {
+#ifdef PRETTY_PRINT
+        std::cout << "[" << input.TimeStamp() << "] Refund failed: no such order."
+                  << std::endl;
+#else
         std::cout << "[" << input.TimeStamp() << "] -1" << ENDL;
+#endif // PRETTY_PRINT
         return;
     }
     int number;
@@ -528,7 +650,12 @@ void TrainManage::Refund(ParameterTable& input, UserManage& userManage) {
     while (number > 0) {
         orderPtr = ticket.last;
         if (orderPtr == -1) {
+#ifdef PRETTY_PRINT
+            std::cout << "[" << input.TimeStamp() << "] Refund failed: no such order."
+                      << std::endl;
+#else
             std::cout << "[" << input.TimeStamp() << "] -1" << ENDL;
+#endif // PRETTY_PRINT
             return;
         }
         ticket = userTicketData_.Get(orderPtr);
@@ -537,7 +664,12 @@ void TrainManage::Refund(ParameterTable& input, UserManage& userManage) {
 
     // Refund the ticket
     if (ticket.state == TicketState::refunded) { // has already refunded
+#ifdef PRETTY_PRINT
+        std::cout << "[" << input.TimeStamp() << "] Refund failed: the ticket has already been refunded."
+                  << std::endl;
+#else
         std::cout << "[" << input.TimeStamp() << "] -1" << ENDL;
+#endif // PRETTY_PRINT
         return;
     }
     if (ticket.state == TicketState::pending) { // in the pending list, not need to modify the train data
@@ -546,8 +678,12 @@ void TrainManage::Refund(ParameterTable& input, UserManage& userManage) {
         userTicketData_.Modify(orderPtr, ticket, input.TimeStamp());
 #else
         userTicketData_.Modify(orderPtr, ticket);
-#endif
+#endif // ROLLBACK
+#ifdef PRETTY_PRINT
+        std::cout << "[" << input.TimeStamp() << "] Refund successfully." << std::endl;
+#else
         std::cout << "[" << input.TimeStamp() << "] 0" << ENDL;
+#endif // PRETTY_PRINT
 
         return;
     }
@@ -565,7 +701,7 @@ void TrainManage::Refund(ParameterTable& input, UserManage& userManage) {
     for (int i = ticket.from; i < ticket.to; ++i) {
         ticketCount.remained[ticket.index][i] += ticket.seatNum;
     }
-#endif
+#endif // ROLLBACK
 
     // check the pending queue
 #ifdef ROLLBACK
@@ -576,7 +712,7 @@ void TrainManage::Refund(ParameterTable& input, UserManage& userManage) {
         + sizeof(TrainTicketCount) * 99);
 #else
     long queuePtr = ticketCount.remained[98][ticket.index];
-#endif
+#endif // ROLLBACK
     long nextPtr;
     // Nothing to pend
     if (queuePtr == -1) {
@@ -586,8 +722,12 @@ void TrainManage::Refund(ParameterTable& input, UserManage& userManage) {
                            input.TimeStamp());
 #else
         ticketData_.Modify(ticket.ticketPosition, ticketCount);
-#endif
+#endif // ROLLBACK
+#ifdef PRETTY_PRINT
+        std::cout << "[" << input.TimeStamp() << "] Refund successfully." << std::endl;
+#else
         std::cout << "[" << input.TimeStamp() << "] 0" << ENDL;
+#endif // PRETTY_PRINT
         return;
     }
     ticket = userTicketData_.Get(queuePtr);
@@ -608,7 +748,7 @@ void TrainManage::Refund(ParameterTable& input, UserManage& userManage) {
         for (int i = ticket.from; i < ticket.to; ++i) {
             ticketCount.remained[ticket.index][i] -= ticket.seatNum;
         }
-#endif
+#endif // ROLLBACK
         queuePtr = nextPtr;
         if (queuePtr == -1) {
 #ifdef ROLLBACK
@@ -627,8 +767,12 @@ void TrainManage::Refund(ParameterTable& input, UserManage& userManage) {
             ticketCount.remained[98][ticket.index] = -1;
             ticketCount.remained[99][ticket.index] = -1;
             ticketData_.Modify(ticket.ticketPosition, ticketCount);
-#endif
+#endif // ROLLBACK
+#ifdef PRETTY_PRINT
+            std::cout << "[" << input.TimeStamp() << "] Refund successfully." << std::endl;
+#else
             std::cout << "[" << input.TimeStamp() << "] 0" << ENDL;
+#endif // PRETTY_PRINT
             return;
         }
         ticket = userTicketData_.Get(queuePtr);
@@ -637,7 +781,7 @@ void TrainManage::Refund(ParameterTable& input, UserManage& userManage) {
     head.remained[ticket.index] = queuePtr;
 #else
     ticketCount.remained[98][ticket.index] = queuePtr;
-#endif
+#endif // ROLLBACK
 
     // this node cannot be served, so we need to move to the next node
     long lastPtr = queuePtr;
@@ -654,13 +798,13 @@ void TrainManage::Refund(ParameterTable& input, UserManage& userManage) {
             userTicketData_.Modify(queuePtr, ticket, input.TimeStamp());
 #else
             userTicketData_.Modify(queuePtr, ticket);
-#endif
+#endif // ROLLBACK
             for (int i = ticket.from; i < ticket.to; ++i) {
 #ifdef ROLLBACK
                 ticketCount.remained[i] -= ticket.seatNum;
 #else
                 ticketCount.remained[ticket.index][i] -= ticket.seatNum;
-#endif
+#endif // ROLLBACK
             }
             queuePtr = nextPtr;
         } else {
@@ -670,7 +814,7 @@ void TrainManage::Refund(ParameterTable& input, UserManage& userManage) {
             userTicketData_.Modify(lastPtr, lastTicket, input.TimeStamp());
 #else
             userTicketData_.Modify(lastPtr, lastTicket);
-#endif
+#endif // ROLLBACK
             lastPtr = queuePtr;
             queuePtr = ticket.queue;
         }
@@ -690,8 +834,12 @@ void TrainManage::Refund(ParameterTable& input, UserManage& userManage) {
 #else
     ticketCount.remained[99][ticket.index] = lastPtr;
     ticketData_.Modify(ticket.ticketPosition, ticketCount);
-#endif
+#endif // ROLLBACK
+#ifdef PRETTY_PRINT
+    std::cout << "[" << input.TimeStamp() << "] Refund successfully." << std::endl;
+#else
     std::cout << "[" << input.TimeStamp() << "] 0" << ENDL;
+#endif // PRETTY_PRINT
 }
 
 void TrainManage::QueryTransfer(ParameterTable& input) {
@@ -726,7 +874,7 @@ void TrainManage::QueryTransfer(ParameterTable& input) {
         TrainTicketCount ticketCount1 = ticketData_.Get(train1.ticketData + sizeof(TrainTicketCount) * startDate);
 #else
         TrainTicketCount ticketCount1 = ticketData_.Get(train1.ticketData);
-#endif
+#endif // ROLLBACK
 
         for (int j = startPtr.second + 1; j <= train1.stationNum; ++j) {
             stationHash[j] = ToHashPair(train1.stations[j]);
@@ -737,13 +885,13 @@ void TrainManage::QueryTransfer(ParameterTable& input) {
             int remained1 = ticketCount1.remained[startPtr.second];
 #else
             int remained1 = ticketCount1.remained[startDate][startPtr.second];
-#endif
+#endif // ROLLBACK
             for (int j = startPtr.second + 1; j <= train1.stationNum; ++j) {
 #ifdef ROLLBACK
                 remained1 = std::min(remained1, ticketCount1.remained[j - 1]);
 #else
                 remained1 = std::min(remained1, ticketCount1.remained[startDate][j - 1]);
-#endif
+#endif // ROLLBACK
                 if (!stations2[train2].Contains(stationHash[j])) continue;
                 int stationIndex2 = stations2[train2][stationHash[j]];
                 int arrivalDay1 = date.day - train1.departureTime[startPtr.second].minute / 1440
@@ -858,7 +1006,7 @@ void TrainManage::QueryTransfer(ParameterTable& input) {
                 for (int k = stationIndex2 + 1; k < end[train2].second; ++k) {
                     journey2.seat = std::min(journey2.seat, ticketCount2.remained[index2][k]);
                 }
-#endif
+#endif // ROLLBACK
 
             }
         }
@@ -881,4 +1029,4 @@ void TrainManage::RollBack(long timeStamp) {
     stationIndex_.RollBack(timeStamp);
     userTicketData_.RollBack(timeStamp);
 }
-#endif
+#endif // ROLLBACK
