@@ -46,6 +46,10 @@ Team name 組名: 陆零叁贰壹
 
     文檔
 
+  - Pretty Print
+
+    命令行交互擴展
+
 ## Progress 進度
 
 - Correctness Test & Pressure Test: *Done* 2022-06-16 commit
@@ -70,6 +74,10 @@ Team name 組名: 陆零叁贰壹
   - File Garbage Collection: Done
 
     檔案垃圾回收: **完成**
+
+  - Pretty Print: **Done**
+
+    命令行交互擴展: **完成**
 
   - Graphic User Interface: *In Progress*
 
@@ -498,3 +506,30 @@ Team name 組名: 陆零叁贰壹
 - 返回值
 
   `bye`
+
+## How to Build 建構方法
+### CLI only 僅命令行
+
+CMake parameters:
+- `-DROLLBACK=1`: enable rollback feature 啓用回滚功能
+- `-DPRETTY_PRINT=1`: enable pretty print 啓用美化输出
+
+Please type the following command to build the executable file:
+
+請輸入以下命令建構標可執行檔：
+
+```text
+cmake . <CMakeParameters> && make <MakeParameters>
+```
+
+### CLI and GUI 命令行和 GUI
+Please follow the steps in the CLI only to build the executable file (`train-ticket-system`).
+
+請遵照前一部分僅命令行的建構方法來建構可執行檔 (`train-ticket-system`)。
+
+Please make sure that you have installed the following packages:
+
+請確保您的裝置上具有以下包：
+
+- `node`
+- `yarn`

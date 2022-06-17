@@ -22,3 +22,17 @@ node_modules
 DartConfiguration.tcl
 train-ticket-system
 TicketSystem.cbp
+user_index
+user_data
+train_index
+train_data
+ticket_data
+station_index
+user_ticket_data
+user_index_log
+user_data_log
+train_index_log
+train_data_log
+ticket_data_log
+station_index_log
+user_ticket_data_log
