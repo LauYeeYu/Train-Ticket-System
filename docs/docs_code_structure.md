@@ -75,6 +75,87 @@ private:
 };
 ```
 
+# In File `rollback_manager.h`
+```c++
+#ifdef ROLLBACK
+template<int kBlockSize>
+class RollBackManager {
+using Ptr = long;
+
+public:
+    RollBackManager(const char* filename);
+
+    ~RollBackManager();
+
+    void Insert(char* info, Ptr pos, long timeStamp);
+
+    void RollBack(std::fstream &file2, long timeStamp);
+};
+#endif
+```
+
+## In File `memory.h`
+```c++
+#ifdef ROLLBACK
+
+template<int kBlockSize>
+class MemoryManager {
+    using Ptr = long;
+
+public:
+    MemoryManager(const char* filename, const char* filename_log, bool &isNew);
+    ~MemoryManager();
+
+    char* GetMeta();
+
+    void UpdateMeta(long timeStamp);
+
+    void ClearMemory();
+
+    void Clear();
+
+    MemNode* findMemory();
+
+    Ptr Last;
+    char* AddNode();
+
+    void DelNode(Ptr pos);
+
+    // timeStamp >= 0 means the node will be modified
+    char* ReadNode(Ptr pos, long timeStamp);
+
+    void RollBack(long timeStamp);
+};
+
+#else
+
+template<int kBlockSize>
+class MemoryManager {
+    using Ptr = long;
+
+public:
+    MemoryManager(const char* filename, bool &isNew);
+    ~MemoryManager();
+
+    char* GetMeta();
+
+    void ClearMemory();
+
+    void Clear();
+
+    MemNode* findMemory();
+
+    Ptr Last;
+    char* AddNode();
+
+    void DelNode(Ptr pos);
+
+    char* ReadNode(Ptr pos);
+};
+
+#endif
+```
+
 ## In File `BP_tree.h`
 
 ```c++
@@ -86,7 +167,11 @@ template<class Key,
          class ValueEqual   = std::equal_to<Value>>
 class BPTree {
 public:
+#ifdef ROLLBACK
+    BPTree(const char* filename, const char* filename_log): memo(filename, filename_log, isNew) {
+#else
     BPTree(const char* filename): memo(filename, isNew);
+#endif
     
     ~BPTree();
 
@@ -100,9 +185,21 @@ public:
 
     Vector<ValT> MultiFind(const KeyT &key);
 
+#ifdef ROLLBACK
+    void Insert(const KeyT &key, const ValT &val, long timeStamp_);
+#else
     void Insert(const KeyT &key, const ValT &val);
+#endif
 
+#ifdef ROLLBACK
+    void Erase(const KeyT &key, long timeStamp_)
+#else
     void Erase(const KeyT &key);
+#endif
+
+#ifdef ROLLBACK
+    void RollBack(long timeStamp)
+#endif
 };
 ```
 
@@ -113,17 +210,23 @@ template<class T>
 class TileStorage {
 public:
     using Ptr = long;
+
     /**
      * Binding the class with a certain file.  If the file is not empty, the
      * position of deleted nodes should be read from the very beginning of
      * the file.
      */
-    TileStorage(const char* fileName);
+#ifdef ROLLBACK
+    explicit TileStorage(const char* fileName, const char* logFileName)
+        : memoryManager_(fileName, logFileName, newFile_) {}
+#else
+    explicit TileStorage(const char* fileName) : memoryManager_(fileName, newFile_) {}
+#endif
 
     /**
      * Set the data at very beginning to be deletedNodes_;
      */
-    ~TileStorage();
+    ~TileStorage() = default;
 
     /**
      * Add a new value with a time stamp.
@@ -131,28 +234,45 @@ public:
      * @param timeStamp
      * @return the file position in this class.
      */
-    Ptr Add(const T& value, long timeStamp);
+    Ptr Add(const T& value);
+
+#ifdef ROLLBACK
+    void Delete(Ptr pos, long timeStamp);
+#else
+    void Delete(Ptr pos);
+#endif
 
     /**
      * Get the value at the position.
      * @return the data at the position
      */
-    T Get(Ptr position);
+#ifdef ROLLBACK
+    const T& Get(Ptr position);
+#else
+    const T& Get(Ptr position);
+#endif
 
     /**
      * Modify the data at the position with the newValue and the time stamp.
      * @return the position of the new value
      */
-    Ptr Modify(Ptr position, const T& newValue, long timeStamp);
-
-    /**
-     * Roll back the data at the position to a certain time stamp.  The node belongs to the ``future'' can be deleted
-     * @return the position of the rolled backed node
-     */
-    Ptr RollBack(Ptr position, long timeStamp);
+#ifdef ROLLBACK
+    void Modify(Ptr position, const T& newValue, long timeStamp);
+#else
+    void Modify(Ptr position, const T& newValue);
+#endif
 
     void Clear();
+
+#ifdef ROLLBACK
+    void RollBack(long timeStamp);
+#endif
+
+private:
+    MemoryManager<sizeof(T)> memoryManager_;
+    bool newFile_;
 };
+
 ```
 
 ## In File `user.h`
@@ -237,7 +357,9 @@ public:
 
     long AddOrder(const std::string& name, Ticket& ticket, long timeStamp, TrainManage& trainManage);
 
-    //void RollBack(long time);
+#ifdef ROLLBACK
+    void RollBack(long timeStamp);
+#endif
 
     void Clear();
 
@@ -355,9 +477,16 @@ struct Ticket {
     long queue = -1; // the next queuing order
     friend std::ostream& operator<<(std::ostream& os, const Ticket& ticket);
 };
+
+#ifdef ROLLBACK
+struct TrainTicketCount {
+    int remained[100];
+};
+#else
 struct TrainTicketCount {
     int remained[100][100];
 };
+#endif
 ```
 
 ## In File `train_manage.h`
@@ -398,8 +527,10 @@ class TrainManage {
     
     void Refund(ParameterTable& input, UserManage& userManage);
     
-    //void RollBack(long timeStamp);
-    
+#ifdef ROLLBACK
+    void RollBack(long timeStamp);
+#endif
+
     void Clear();
     
     private:

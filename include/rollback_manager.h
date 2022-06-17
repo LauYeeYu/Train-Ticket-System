@@ -20,6 +20,8 @@
 #include <fstream>
 #include <cstring>
 
+#ifdef ROLLBACK
+
 template<int kBlockSize>
 class RollBackManager {
     using Ptr = long;
@@ -86,5 +88,7 @@ public:
         }
     }
 };
+
+#endif // ROLLBACK
 
 #endif // TICKET_SYSTEM_INCLUDE_ROLLBACK_MANAGER_H
