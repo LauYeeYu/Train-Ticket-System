@@ -3,6 +3,7 @@ import Router from '@koa/router'
 import bodyparser from 'koa-body'
 import { createInterface } from 'readline'
 import { spawn } from 'child_process'
+import { v4 as uuid } from 'uuid'
 
 const app = new koa()
 const router = new Router()
@@ -14,9 +15,14 @@ const escape = str => str
 
 const proc = spawn('./train-ticket-system')
 
+let userMap = new Map()
+let privilegeMap = new Map()
 
-const s = createInterface({ input: proc.stdout }) // 建立读取子进程输出的接口
+const s = createInterface({ input: proc.stdout }) // binding the stdout of subprocess to a readline interface
 const queue = []
+const buffer = []
+
+let timeStamp = 0
 
 // when a read stream has found something to read put it into the queue
 s.on('line', line => {
@@ -31,23 +37,426 @@ const getline = () => {
     else return buffer.shift()
 }
 
+const dismissTimeStamp = raw => {
+    return raw.split(' ').slice(1).join(' ')
+}
+
+let getProfile = async user => {
+    ++timeStamp
+   putline(`[${timeStamp}] query_profile -c ${user} -u ${user}`)
+    return dismissTimeStamp(await getline())
+}
+
+// terminating the system
+const terminateCode = uuid()
+console.log(`Your terminate code is ${terminateCode}.`)
+console.log(`Please visit /${terminateCode} to terminate the system.`)
+router.get(`/${terminateCode}`, async ctx => {
+    putline('[0] exit')
+    if ((await getline()).split(' ')[1] === 'bye') {
+        ctx.body = `
+<html>
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="styles.css">
+    <meta http-equiv="X-UA-Compatible">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ticket System</title>
+</head>
+<body>
+    <main>
+    <h1>The system has been terminated, please also terminate the JavaScript service.</h1>
+    </main>
+</body>
+</html>`
+    }
+})
 
 router.get('/', async ctx => {
+    if (!ctx.cookies.get('sessionID')) {
+        ctx.body = `
+<html>
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="styles.css">
+    <meta http-equiv="X-UA-Compatible">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ticket System</title>
+</head>
+<body>
+    <main>
+    Not logged in.
+    </main>
+</body>
+</html>`
+        return
+    }
+
     ctx.body = `
-    <html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="styles.css">
+    <meta http-equiv="X-UA-Compatible">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ticket System</title>
+</head>
+<body>
+    <main>
+    logged in as ${ctx.cookies.get('username')}
+    </main>
+</body>
+</html>`
+})
+
+router.post('/login', async ctx => {
+    ++timeStamp
+    putline(`[${timeStamp}] login -u ${ctx.request.body.username} -p ${ctx.request.body.password}`)
+    const msg = dismissTimeStamp(await getline())
+    if (userMap.has(ctx.request.body.username)) {
+        if (msg === "Login failed: the user has already logged in.") {
+            ctx.cookies.set('sessionID', userMap[ctx.request.body.username])
+            ctx.cookies.set('username', ctx.request.body.username)
+            ctx.redirect('/')
+        } else {
+            ctx.body = `
+<html>
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="styles.css">
+    <meta http-equiv="X-UA-Compatible">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ticket System</title>
+</head>
+<body>
+    <main>
+    ${msg}
+    </main>
+</body>
+</html>`
+        }
+    } else {
+        if (msg === "Login successfully.") {
+            userMap[ctx.request.body.username] = uuid()
+            ctx.cookies.set('sessionID', userMap[ctx.request.body.username])
+            ctx.cookies.set('username', ctx.request.body.username)
+            // example: username name email@example.com 10(privilege)
+            privilegeMap[ctx.request.body.username] = (await getProfile(ctx.query.user)).split(' ')[3]
+            ctx.redirect('/')
+        } else {
+            ctx.body = `
+<html>
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="styles.css">
+    <meta http-equiv="X-UA-Compatible">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ticket System</title>
+</head>
+<body>
+    <main>
+    ${msg}
+    </main>
+</body>
+</html>`
+        }
+    }
+})
+
+router.get('/logout', async ctx => {
+    ctx.cookies.set('sessionID', '', { expires: new Date(0) })
+    ctx.cookies.set('username', '', { expires: new Date(0) })
+    ctx.redirect('/')
+})
+
+router.get('/query-plan', ctx => {
+    ctx.body = `
+<html>
     <head>
         <meta charset="UTF-8">
         <link rel="stylesheet" href="styles.css">
-        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta http-equiv="X-UA-Compatible">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Ticket System</title>
     </head>
     <body>
         <main>
-        /* main body part */
+            <p>Ticket</p>
+            <form action="/query-ticket" method="post">
+                <p>Destination: <input name="destination"></p>
+                <p>Departure: <input name="departure"></p>
+                <p>Date: <input name="month">-<input name="date"></p>
+                <select name="sort" id="modify">
+                    <option value="time">-time by default-</option>
+                    <option value="time">time</option>
+                    <option value="cost">cost</option>
+                </select>
+                <button type="submit">Search</button>
+            </form>
+            <p>Transfer</p>
+            <form action="/query-transfer" method="post">
+                <p>Destination: <input name="destination"></p>
+                <p>Departure: <input name="departure"></p>
+                <p>Date: <input name="month">-<input name="date"></p>
+                <select name="sort" id="modify">
+                    <option value="time">-time by default-</option>
+                    <option value="time">time</option>
+                    <option value="cost">cost</option>
+                </select>
+                <button type="submit">Search</button>
+            </form>
         </main>
     </body>
-    </html>
+</html>`
+})
+
+router.post('/query-ticket', async ctx => {
+    ++timeStamp
+    putline(`[${timeStamp}] query_ticket -t ${ctx.request.body.destination} -s ${ctx.request.body.departure} -d ${ctx.request.body.month}-${ctx.request.body.date} -p ${ctx.request.body.sort}`)
+    const num = (await getline()).split(' ')[1]
+
+    ctx.body = `
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <link rel="stylesheet" href="styles.css">
+        <meta http-equiv="X-UA-Compatible">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Ticket System</title>
+    </head>
+    <body>
+        <main>
+            `
+
+    for (let i = 0; i < num; ++i) {
+        const [ trainID, from, leaving, arrow, to, arrival, price, seats ] = (await getline()).split(' ')
+        if (seats === '0' || seats === '1') {
+            ctx.body += `
+<div>
+    <p>${trainID} ￥${price} remain ${seats} seat</p>
+    <p>${from} -> ${to}</p>
+    <p>${leaving} ${arrival}</p>    
+</div>`
+        } else {
+            ctx.body += `
+<div>
+    <p>${trainID} ￥${price} remain ${seats} seats</p>
+    <p>${from} -> ${to}</p>
+    <p>${leaving} ${arrival}</p>
+</div>`
+        }
+    }
+    ctx.body += `
+        </main>
+    </body>
+</html>`
+})
+
+router.post('/query-transfer', async ctx => {
+    ++timeStamp
+    putline(`[${timeStamp}] query_transfer -t ${ctx.request.body.destination} -s ${ctx.request.body.departure} -d ${ctx.request.body.month}-${ctx.request.body.date} -p ${ctx.request.body.sort}`)
+    const num = (await getline()).split(' ')[1]
+
+    if (num === '0') {
+        ctx.body = `
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <link rel="stylesheet" href="styles.css">
+        <meta http-equiv="X-UA-Compatible">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Ticket System</title>
+    </head>
+    <body>
+        <main>
+        No possible plan
+        </main>
+    </body>
+</html>`
+    } else {
+        ctx.body = `
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <link rel="stylesheet" href="styles.css">
+        <meta http-equiv="X-UA-Compatible">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Ticket System</title>
+    </head>
+    <body>
+        <main>
+            `
+
+        for (let i = 0; i < 2; ++i) {
+            const [trainID, from, leaving, arrow, to, arrival, price, seats] = (await getline()).split(' ')
+            if (seats === '0' || seats === '1') {
+                ctx.body += `
+<div>
+    <p>${trainID} ￥${price} remain ${seats} seat</p>
+    <p>${from} -> ${to}</p>
+    <p>${leaving} ${arrival}</p>    
+</div>`
+            } else {
+                ctx.body += `
+<div>
+    <p>${trainID} ￥${price} remain ${seats} seats</p>
+    <p>${from} -> ${to}</p>
+    <p>${leaving} ${arrival}</p>
+</div>`
+            }
+        }
+        ctx.body += `
+        </main>
+    </body>
+</html>`
+    }
+})
+
+router.get('/profile', async ctx => {
+    // example: username name email@example.com 10(privilege)
+    const msg = await getProfile(ctx.cookies.get('username'))
+    if (msg.split(' ')[1] === 'failed:') {
+        ctx.body = `
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <link rel="stylesheet" href="styles.css">
+        <meta http-equiv="X-UA-Compatible">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Ticket System</title>
+    </head>
+    <body>
+        <main>
+        <p>You are not logged in</p>
+        </main>
+    </body>
+</html>`
+
+    }
+    const [ username, name, email, privilege ] = msg.split(' ')
+    ctx.body = `
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <link rel="stylesheet" href="styles.css">
+        <meta http-equiv="X-UA-Compatible">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Ticket System</title>
+    </head>
+    <body>
+        <main>
+            <p>Ticket</p>
+            <form action="/profile" method="post">
+                <p>username: <input name="username value="${username}"></p>
+                <p>name: <input name="name" value="${name}"></p>
+                <p>mail address: <input name="mailAddress" value="${email}"></p>
+                <p>privilege: <input name="privilege" value="${privilege}"></p>
+                <button type="submit">Search</button>
+        </main>
+    </body>
+</html>`
+})
+
+router.post('/profile', async ctx => {
+    putline(`[${timeStamp}] modify_profile -c ${ctx.request.body.username} -u ${ctx.request.body.username} -n ${ctx.request.body.name} -m ${ctx.request.body.mailAddress} -g ${ctx.request.body.privilege}`)
+    const msg = await getline()
+    if (msg.split(' ')[1] === 'failed:') {
+        ctx.body = `
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <link rel="stylesheet" href="styles.css">
+        <meta http-equiv="X-UA-Compatible">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Ticket System</title>
+    </head>
+    <body>
+        <main>
+        <p>${msg}</p>
+        </main>
+    </body>`
+    } else {
+        ctx.body = `
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <link rel="stylesheet" href="styles.css">
+        <meta http-equiv="X-UA-Compatible">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Ticket System</title>
+    </head>
+    <body>
+        <main>
+        <p>${msg}</p>
+        </main>
+    </body>
+</html>`
+    }
+})
+
+router.post('/query-train', async ctx => {
+    ++timeStamp
+    putline(`[${timeStamp}] query-train -u ${ctx.request.body.trainID} -t ${ctx.request.body.month}-${ctx.request.body.day}`)
+    const msg = dismissTimeStamp(await getline())
+    if (msg.split(' ')[1] === 'failed') {
+        ctx.body = `
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <link rel="stylesheet" href="styles.css">
+                <meta http-equiv="X-UA-Compatible">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Ticket System</title>
+            </head>
+            <body>
+                <main>
+                ${msg}
+                </main>
+            </body>
+        </html>`
+        return
+    }
+    const num = msg.split(' ')[5]
+    ctx.body = `
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <link rel="stylesheet" href="styles.css">
+            <meta http-equiv="X-UA-Compatible">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Ticket System</title>
+        </head>
+        <body>
+            <main>
+            ${msg}
+                <table border="1" class="centre">
+                    <tr>
+                        <th>station</th>
+                        <th>arrival date</th>
+                        <th>arrival time</th>
+                        <th>departure date</th>
+                        <th>departure time</th>
+                        <th>total price</th>
+                        <th>remained seats</th>
+                    </tr>`
+    for (let i = 0; i < num; i++) {
+        const [ station, arrivalDate, arrivalTime, arrow, departureDate, departureTime, price, seats ] = (await getline()).split(' ')
+        ctx.body += `
+        <tr>
+            <td>${station}</td>
+            <td>${arrivalDate}</td>
+            <td>${arrivalTime}</td>
+            <td>${departureDate}</td>
+            <td>${departureTime}</td>
+            <td>${price}</td>
+            <td>${seats}</td>
+        <tr>
+        `
+    }
+    ctx.body += `
+            </main>
+        </body>
+        </html>
     `
 })
 
@@ -201,11 +610,11 @@ router.get('/styles.css', ctx => {
                     display: block;
                     margin-left: 194px;
                 }
-            }`
-})
-
-router.post('/', async ctx => {
-    // Logical stuff
+            }
+            .top-app-bar {
+                background-color: #4f5d73;
+            }
+            `
 })
 
 app.listen(50089)

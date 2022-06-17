@@ -282,7 +282,13 @@ void TrainManage::QueryTrain(ParameterTable& input) {
                   << train.arrivalTime[train.stationNum] << " -> xx-xx xx:xx "
                   << train.prefixPriceSum[train.stationNum] << " x" << ENDL;
     } else {
+#ifdef PRETTY_PRINT
+        std::cout << "[" << input.TimeStamp() << "] ID: " << train.trainID
+                  << " type: " << train.type << " total " << train.stationNum
+                  << "stations." << std::endl;
+#else
         std::cout << "[" << input.TimeStamp() << "] " << train.trainID << " " << train.type << ENDL;
+#endif // PRETTY_PRINT
 
         std::cout << train.stations[1] << " xx-xx xx:xx -> "
                   << date + train.departureTime[1].minute / 1440 << " "
@@ -362,7 +368,11 @@ void TrainManage::QueryTicket(ParameterTable& input) {
             return a.trainID < b.trainID;
         });
     }
+#ifdef PRETTY_PRINT
+    std::cout << "[" << input.TimeStamp() << "] " << journeys.Size() << "plans" << ENDL;
+#else
     std::cout << "[" << input.TimeStamp() << "] " << journeys.Size() << ENDL;
+#endif
     for (auto& i : journeys) {
         std::cout << i << ENDL;
     }
@@ -1014,8 +1024,14 @@ void TrainManage::QueryTransfer(ParameterTable& input) {
     delete[] stations2;
 
     if (Found) {
+#ifdef PRETTY_PRINT
+        std::cout << "[" << input.TimeStamp() << "] Transfer plan" << std::endl
+                  << journey1 << std::endl
+                  << journey2 << std::endl;
+#else
         std::cout << "[" << input.TimeStamp() << "] " << journey1 << ENDL
                   << journey2 << ENDL;
+#endif // PRETTY_PRINT
     } else {
         std::cout << "[" << input.TimeStamp() << "] 0" << ENDL;
     }

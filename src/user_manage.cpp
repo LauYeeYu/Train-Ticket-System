@@ -128,6 +128,7 @@ void UserManage::Adduser_(User& user, long timeStamp) {
 }
 
 void UserManage::Login(ParameterTable& input) {
+#ifndef GUI
     if (loginPool_.Contains(input['u'])) {
 #ifdef PRETTY_PRINT
         std::cout << "[" << input.TimeStamp() << "] Login failed: user "
@@ -137,6 +138,7 @@ void UserManage::Login(ParameterTable& input) {
 #endif // PRETTY_PRINT
         return;
     }
+#endif // GUI
 
     if (!userIndex_.Contains(ToHashPair(input['u']))) {
 #ifdef PRETTY_PRINT
@@ -159,6 +161,14 @@ void UserManage::Login(ParameterTable& input) {
 #endif // PRETTY_PRINT
         return;
     }
+#ifdef GUI
+    if (loginPool_.Contains(input['u'])) {
+        std::cout << "[" << input.TimeStamp()
+                  << "] Login failed: the user has already logged in."
+                  << std::endl;
+        return;
+    }
+#endif // GUI
     loginPool_.Login(user);
 #ifdef PRETTY_PRINT
     std::cout << "[" << input.TimeStamp() << "] Login successfully." << std::endl;
@@ -265,7 +275,11 @@ void UserManage::Modify(ParameterTable& input) {
 
     if (!input['g'].empty()) {
         int privilege = StringToInt(input['g']);
+#ifdef GUI
+        if (privilege > operationUser.privilege) {
+#else
         if (privilege >= operationUser.privilege) {
+#endif // GUI
 #ifdef PRETTY_PRINT
             std::cout << "[" << input.TimeStamp()
                       << "] Modify failed: privilege is higher than operating user."
