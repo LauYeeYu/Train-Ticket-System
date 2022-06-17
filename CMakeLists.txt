@@ -4,7 +4,15 @@ include(CTest)
 
 set(CMAKE_CXX_STANDARD 17)
 
-set(CMAKE_CXX_FLAGS "-Ofast -DBOOST -DROLLBACK")
+set(CMAKE_CXX_FLAGS "-Ofast")
+
+if(DEFINED ROLLBACK)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DROLLBACK")
+endif()
+
+if(DEFINED PRETTY_PRINT)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DPRETTY_PRINT")
+endif()
 
 set(TICKET_INCLUDES
         include)
@@ -18,5 +26,5 @@ set(TICKET_SOURCES
         src/user_manage.cpp
         src/utility.cpp)
 
-add_executable(code ${TICKET_SOURCES} ${TICKET_INCLUDES})
-target_include_directories(code PRIVATE ${TICKET_INCLUDES})
+add_executable(train-ticket-system ${TICKET_SOURCES} ${TICKET_INCLUDES})
+target_include_directories(train-ticket-system PRIVATE ${TICKET_INCLUDES})
