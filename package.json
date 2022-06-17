@@ -1,0 +1,14 @@
+{
+  "name": "Train-Ticket-System",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "git@github.com:LauYeeYu/Train-Ticket-System.git",
+  "author": "Lau Yee-Yu <liuyiyu2003@126.com>",
+  "license": "GPL-3.0",
+  "private": true,
+  "dependencies": {
+    "@koa/router": "^10.1.1",
+    "koa": "^2.13.4",
+    "koa-body": "^5.0.0"
+  }
+}
