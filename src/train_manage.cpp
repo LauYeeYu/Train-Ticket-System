@@ -369,7 +369,7 @@ void TrainManage::QueryTicket(ParameterTable& input) {
         });
     }
 #ifdef PRETTY_PRINT
-    std::cout << "[" << input.TimeStamp() << "] " << journeys.Size() << "plans" << ENDL;
+    std::cout << "[" << input.TimeStamp() << "] " << journeys.Size() << " plans" << ENDL;
 #else
     std::cout << "[" << input.TimeStamp() << "] " << journeys.Size() << ENDL;
 #endif

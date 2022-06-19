@@ -73,7 +73,7 @@ router.get(`/${terminateCode}`, async ctx => {
 })
 
 router.get('/', async ctx => {
-    if (!ctx.cookies.get('sessionID')) {
+    if (!ctx.cookies.get('sessionID') || userMap[ctx.cookies.get('username')] === undefined) {
         ctx.body = `
 <html>
 <head>
@@ -86,6 +86,11 @@ router.get('/', async ctx => {
 <body>
     <main>
     Not logged in.
+    <form action="/login" method="post">
+        <input type="text" name="username" placeholder="username">
+        <input type="password" name="password" placeholder="password">
+        <button type="submit" value="Login">Login</button>
+    </form>
     </main>
 </body>
 </html>`
@@ -104,6 +109,14 @@ router.get('/', async ctx => {
 <body>
     <main>
     logged in as ${ctx.cookies.get('username')}
+    <form action="/buy" method="post">
+        <p><input name="trainID" placeholder="trainID"></p>
+        <p><input name="startStation" placeholder="From where"></p>
+        <p><input name="endStation" placeholder="To where"></p>
+        <p><input name="number" placeholder="seat number"></p>
+        <p><input name="month" placeholder="mm">-<input name="day" placeholder="dd"></p>
+        <p><input type="checkbox" name="queue" checked="checked">Accept waiting until the order is available if there is no enough seats.</p>
+        <button type="submit" value="Buy">Buy</button>
     </main>
 </body>
 </html>`
@@ -229,20 +242,22 @@ router.post('/query-ticket', async ctx => {
             `
 
     for (let i = 0; i < num; ++i) {
-        const [ trainID, from, leaving, arrow, to, arrival, price, seats ] = (await getline()).split(' ')
+        const [ trainID, from, leavingDate, leavingTime, arrow, to, arrivalDate, arrivalTime, price, seats ] = (await getline()).split(' ')
         if (seats === '0' || seats === '1') {
             ctx.body += `
 <div>
     <p>${trainID} ￥${price} remain ${seats} seat</p>
     <p>${from} -> ${to}</p>
-    <p>${leaving} ${arrival}</p>    
+    <p>${leavingTime} ${arrivalTime}</p>
+    <p>${leavingDate} ${arrivalDate}</p>    
 </div>`
         } else {
             ctx.body += `
 <div>
     <p>${trainID} ￥${price} remain ${seats} seats</p>
     <p>${from} -> ${to}</p>
-    <p>${leaving} ${arrival}</p>
+    <p>${leavingTime} ${arrivalTime}</p>
+    <p>${leavingDate} ${arrivalDate}</p> 
 </div>`
         }
     }
@@ -288,20 +303,22 @@ router.post('/query-transfer', async ctx => {
             `
 
         for (let i = 0; i < 2; ++i) {
-            const [trainID, from, leaving, arrow, to, arrival, price, seats] = (await getline()).split(' ')
+            const [ trainID, from, leavingDate, leavingTime, arrow, to, arrivalDate, arrivalTime, price, seats ] = (await getline()).split(' ')
             if (seats === '0' || seats === '1') {
                 ctx.body += `
 <div>
     <p>${trainID} ￥${price} remain ${seats} seat</p>
     <p>${from} -> ${to}</p>
-    <p>${leaving} ${arrival}</p>    
+    <p>${leavingTime} ${arrivalTime}</p>
+    <p>${leavingDate} ${arrivalDate}</p>    
 </div>`
             } else {
                 ctx.body += `
 <div>
     <p>${trainID} ￥${price} remain ${seats} seats</p>
     <p>${from} -> ${to}</p>
-    <p>${leaving} ${arrival}</p>
+    <p>${leavingTime} ${arrivalTime}</p>
+    <p>${leavingDate} ${arrivalDate}</p> 
 </div>`
             }
         }
@@ -310,6 +327,23 @@ router.post('/query-transfer', async ctx => {
     </body>
 </html>`
     }
+})
+
+router.get('/unauthorized', async ctx => {
+    ctx.body = `
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <link rel="stylesheet" href="styles.css">
+        <meta http-equiv="X-UA-Compatible">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Ticket System</title>
+    </head>
+    <body>
+        <main>
+            <p>Unauthorized</p>
+        </main>
+    </body>`
 })
 
 router.get('/profile', async ctx => {
@@ -345,21 +379,23 @@ router.get('/profile', async ctx => {
     </head>
     <body>
         <main>
-            <p>Ticket</p>
             <form action="/profile" method="post">
-                <p>username: <input name="username value="${username}"></p>
+                <p>username: ${username}</p>
                 <p>name: <input name="name" value="${name}"></p>
                 <p>mail address: <input name="mailAddress" value="${email}"></p>
                 <p>privilege: <input name="privilege" value="${privilege}"></p>
-                <button type="submit">Search</button>
+                <button type="submit">modify</button>
         </main>
     </body>
 </html>`
 })
 
 router.post('/profile', async ctx => {
-    putline(`[${timeStamp}] modify_profile -c ${ctx.request.body.username} -u ${ctx.request.body.username} -n ${ctx.request.body.name} -m ${ctx.request.body.mailAddress} -g ${ctx.request.body.privilege}`)
-    const msg = await getline()
+    if (ctx.cookies.get('sessionID') !== userMap[ctx.cookies.get('username')]) {
+        ctx.redirect('/unauthorized')
+    }
+    putline(`[${timeStamp}] modify_profile -c ${ctx.cookies.get('username')} -u ${ctx.cookies.get('username')} -n ${ctx.request.body.name} -m ${ctx.request.body.mailAddress} -g ${ctx.request.body.privilege}`)
+    const msg = dismissTimeStamp(await getline())
     if (msg.split(' ')[1] === 'failed:') {
         ctx.body = `
 <html>
@@ -375,7 +411,84 @@ router.post('/profile', async ctx => {
         <p>${msg}</p>
         </main>
     </body>`
-    } else {
+    }
+    ctx.redirect('/profile')
+})
+
+router.get('/orders', async ctx => {
+    if (ctx.cookies.get('sessionID') !== userMap[ctx.cookies.get('username')]) {
+        ctx.redirect('/unauthorized')
+    }
+    putline(`[${timeStamp}] query_order -u ${ctx.cookies.get('username')}`)
+    const line = await getline()
+    if (line.split(' ')[2] === 'failed:') {
+        ctx.body = `
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <link rel="stylesheet" href="styles.css">
+        <meta http-equiv="X-UA-Compatible">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Ticket System</title>
+    </head>
+    <body>
+        <main>
+        <p>Query failed! You are not logged in!</p>
+        </main>
+    </body>
+</html>`
+        return
+    }
+    const num = line.split(' ')[1]
+
+    ctx.body = `
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <link rel="stylesheet" href="styles.css">
+        <meta http-equiv="X-UA-Compatible">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Ticket System</title>
+    </head>
+    <body>
+        <main>`
+    for (let i = 1; i <= num; ++i) {
+        const [ statusRaw, trainID, from, leavingDate, leavingTime, arrow, to, arrivalDate, arrivalTime, price, num ] = (await getline()).split(' ')
+        const status = statusRaw.slice(1, -1)
+        if (num === '0' || num === '1') {
+            ctx.body += `
+<div>
+    <p>${status} ${trainID} ${from} ${leavingDate} ${leavingTime} -> ${to} ${arrivalDate} ${arrivalTime} ￥${price} ${num} seat</p>
+    <form action="/refund" method="post">
+        <input type="hidden" value="${i}">
+        <button type="submit">Refund</button>
+    </form>
+</div>`
+        } else {
+            ctx.body += `
+<div>
+    <p>${status} ${trainID} ${from} ${leavingDate} ${leavingTime} -> ${to} ${arrivalDate} ${arrivalTime} ￥${price} ${num} seats</p>
+    <form action="/refund" method="post">
+        <input type="hidden" value="${i}">
+        <button type="submit">Refund</button>
+    </form>
+</div>`
+        }
+    }
+    ctx.body += `
+        </main>
+    </body>
+</html>`
+})
+
+router.post('/refund', async ctx => {
+    if (ctx.cookies.get('sessionID') !== userMap[ctx.cookies.get('username')]) {
+        ctx.redirect('/unauthorized')
+    }
+    const index = ctx.request.body.index
+    putline(`[${timeStamp}] refund_ticket -u ${ctx.cookies.get('username')} -i ${index}`)
+    const msg = dismissTimeStamp(await getline())
+    if (msg.split(' ')[1] === 'failed:') {
         ctx.body = `
 <html>
     <head>
@@ -391,14 +504,239 @@ router.post('/profile', async ctx => {
         </main>
     </body>
 </html>`
+        return
     }
+    ctx.body = `
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <link rel="stylesheet" href="styles.css">
+        <meta http-equiv="X-UA-Compatible">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Ticket System</title>
+    </head>
+    <body>
+        <main>
+        <p>${msg}</p>
+        </main>
+    </body>
+</html>`
+})
+
+router.get('/add-user', async ctx => {
+    ctx.body = `
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <link rel="stylesheet" href="styles.css">
+        <meta http-equiv="X-UA-Compatible">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Ticket System</title>
+    </head>
+    <body>
+        <main>
+            <p>Add User</p>
+            <form action="/add-user" method="post">
+                <p>username: <input name="username"></p>
+                <p>name: <input name="name"></p>
+                <p>mail address: <input name="mailAddress"></p>
+                <p>privilege: <input name="privilege"></p>
+                <p>password: <input name="password" type="password"></p>
+                <button type="submit">Add</button>
+        </main>
+    </body>
+</html>`
+})
+
+router.post('/add-user', async ctx => {
+    if (ctx.cookies.get('sessionID') !== userMap[ctx.cookies.get('username')]) {
+        ctx.redirect('/unauthorized')
+    }
+    putline(`[${timeStamp}] add_user -c ${ctx.request.body.username} -u ${ctx.request.body.username} -n ${ctx.request.body.name} -e ${ctx.request.body.email} -p ${ctx.request.body.privilege} -p ${ctx.request.body.password}`)
+    const msg = dismissTimeStamp(await getline)
+    ctx.body = `
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <link rel="stylesheet" href="styles.css">
+        <meta http-equiv="X-UA-Compatible">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Ticket System</title>
+    </head>
+    <body>
+        <main>
+        <p>${msg}</p>
+        </main>
+    </body>
+</html>`
+})
+
+router.get('/modify', async ctx => {
+    ctx.body = `
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <link rel="stylesheet" href="styles.css">
+        <meta http-equiv="X-UA-Compatible">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Ticket System</title>
+    </head>
+    <body>
+        <main>
+            <p>Modify User</p>
+            <form action="/modify" method="post">
+                <p>username: <input name="username"></p>
+                <p>password: <input name="password" type="password"></p>
+                <p>mail address: <input name="mailAddress"></p>
+                <p>privilege: <input name="privilege"></p>
+                <button type="submit">Modify</button>
+        </main>
+    </body>
+</html>`
+})
+
+router.post('/modify', async ctx => {
+    if (ctx.cookies.get('sessionID') !== userMap[ctx.cookies.get('username')]) {
+        ctx.redirect('/unauthorized')
+    }
+    if (ctx.request.body.privilege !== '') {
+        putline(`[${timeStamp}] modify_user -c ${ctx.cookies.get('username')} -u ${ctx.request.body.username} -g ${ctx.request.body.privilege}`)
+        const msg = dismissTimeStamp(await getline)
+        if (msg.split(' ')[1] === 'failed:') {
+            ctx.body = `
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <link rel="stylesheet" href="styles.css">
+        <meta http-equiv="X-UA-Compatible">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Ticket System</title>
+    </head>
+    <body>
+        <main>
+        <p>${msg}</p>
+        </main>
+    </body>
+</html>`
+            return
+        }
+    }
+    if (ctx.request.body.mailAddress !== '') {
+        putline(`[${timeStamp}] modify_user -c ${ctx.cookies.get('username')} -u ${ctx.request.body.username} -m ${ctx.request.body.mailAddress}`)
+        const msg = dismissTimeStamp(await getline)
+        if (msg.split(' ')[1] === 'failed:') {
+            ctx.body = `
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <link rel="stylesheet" href="styles.css">
+        <meta http-equiv="X-UA-Compatible">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Ticket System</title>
+    </head>
+    <body>
+        <main>
+        <p>${msg}</p>
+        </main>
+    </body>
+</html>`
+            return
+        }
+    }
+    if (ctx.request.body.password !== '') {
+        putline(`[${timeStamp}] modify_user -c ${ctx.cookies.get('username')} -u ${ctx.request.body.username} -p ${ctx.request.body.password}`)
+        const msg = dismissTimeStamp(await getline)
+        if (msg.split(' ')[1] === 'failed:') {
+            ctx.body = `
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <link rel="stylesheet" href="styles.css">
+        <meta http-equiv="X-UA-Compatible">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Ticket System</title>
+    </head>
+    <body>
+        <main>
+        <p>${msg}</p>
+        </main>
+    </body>
+</html>`
+            return
+        }
+    }
+    if (ctx.request.body.name !== '') {
+        putline(`[${timeStamp}] modify_user -c ${ctx.cookies.get('username')} -u ${ctx.request.body.username} -n ${ctx.request.body.name}`)
+        const msg = dismissTimeStamp(await getline)
+        if (msg.split(' ')[1] === 'failed:') {
+            ctx.body = `
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <link rel="stylesheet" href="styles.css">
+        <meta http-equiv="X-UA-Compatible">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Ticket System</title>
+    </head>
+    <body>
+        <main>
+        <p>${msg}</p>
+        </main>
+    </body>
+</html>`
+            return
+        }
+    }
+    ctx.body = `
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <link rel="stylesheet" href="styles.css">
+        <meta http-equiv="X-UA-Compatible">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Ticket System</title>
+    </head>
+    <body>
+        <main>
+        <p>Modify User Success</p>
+        </main>
+    </body>
+</html>`
+})
+
+router.get('/add-train', async ctx => {
+    //TODO
+    ctx.body = `
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <link rel="stylesheet" href="styles.css">
+        <meta http-equiv="X-UA-Compatible">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Ticket System</title>
+    </head>
+    <body>
+        <main>
+            <p>Add Train</p>
+            <form action="/add-train" method="post">
+                <p>train number: <input name="trainNumber"></p>
+                <p>train name: <input name="trainName"></p>
+                <p>start station: <input name="startStation"></p>
+                <p>end station: <input name="endStation"></p>
+                <p>start time: <input name="startTime"></p>
+                <p>end time: <input name="endTime"></p>
+                <p>price: <input name="price"></p>
+                <button type="submit">Add</button>
+        </main>
+    </body>
+</html>`
 })
 
 router.post('/query-train', async ctx => {
     ++timeStamp
     putline(`[${timeStamp}] query-train -u ${ctx.request.body.trainID} -t ${ctx.request.body.month}-${ctx.request.body.day}`)
     const msg = dismissTimeStamp(await getline())
-    if (msg.split(' ')[1] === 'failed') {
+    if (msg.split(' ')[1] === 'failed:') {
         ctx.body = `
             <html>
             <head>
@@ -458,6 +796,30 @@ router.post('/query-train', async ctx => {
         </body>
         </html>
     `
+})
+
+router.post('/buy', async ctx => {
+    ++timeStamp
+    putline(`[${timeStamp}] buy_ticket -u ${ctx.cookies.get('username')} -i ${ctx.request.body.trainID} -f ${ctx.request.body.startStation} -t ${ctx.request.body.endStation} -d ${ctx.request.body.month}-${ctx.request.body.day} -n ${ctx.request.body.number} -q ${ctx.request.body.queue === 'checked'}`)
+    const msg = dismissTimeStamp(await getline())
+
+    ctx.body = `
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <link rel="stylesheet" href="styles.css">
+        <meta http-equiv="X-UA-Compatible">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Ticket System</title>
+    </head>
+    <body>
+        <main>
+        <p>${msg}</p>
+        <p><a href="/">back to homepage</a></p>
+        </main>
+    </body>
+</html>`
+return
 })
 
 router.get('/styles.css', ctx => {
