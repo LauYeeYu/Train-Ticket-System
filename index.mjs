@@ -1159,6 +1159,9 @@ router.post('/query-train', async ctx => {
 })
 
 router.post('/buy', async ctx => {
+    if (ctx.cookies.get('sessionID') !== userMap[ctx.cookies.get('username')]) {
+        ctx.redirect('/unauthorized')
+    }
     ++timeStamp
     putline(`[${timeStamp}] buy_ticket -u ${ctx.cookies.get('username')} -i ${ctx.request.body.trainID} -f ${ctx.request.body.startStation} -t ${ctx.request.body.endStation} -d ${ctx.request.body.month}-${ctx.request.body.day} -n ${ctx.request.body.number} -q ${ctx.request.body.queue === 'checked'}`)
     const msg = dismissTimeStamp(await getline())
