@@ -39,7 +39,7 @@
 
   - `Vector`
 
-### Bouns
+### Bonus
 
 计划完成的 bonus:
 

@@ -536,6 +536,14 @@ Please make sure that you have installed the following packages:
 - `node`
 - `yarn`
 
+Please type the following command to add the packages:
+
+請輸入以下命令加入包：
+
+```bash
+yarn
+```
+
 Then you should type the following code with nodejs.
 
 請使用 nodejs 執行所列之執行碼。
