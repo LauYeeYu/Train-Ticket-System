@@ -4,9 +4,13 @@ import bodyparser from 'koa-body'
 import { createInterface } from 'readline'
 import { spawn } from 'child_process'
 import { v4 as uuid } from 'uuid'
+import serve from "koa-static";
 
 const app = new koa()
 const router = new Router()
+
+app.use(serve('assets'))
+
 app.use(bodyparser()).use(router.routes()).use(router.allowedMethods())
 const escape = str => str
     .replace(/</g, '&lt')
@@ -57,11 +61,13 @@ router.get(`/${terminateCode}`, async ctx => {
         ctx.body = `
 <html>
 <head>
-    <meta charset="UTF-8">
-    <link rel="stylesheet" href="styles.css">
-    <meta http-equiv="X-UA-Compatible">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ticket System</title>
+<meta charset="UTF-8">
+<link rel="stylesheet">
+<meta http-equiv="X-UA-Compatible">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ticket System</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2" crossorigin="anonymous"></script>
 </head>
 <body>
     <main>
@@ -77,21 +83,39 @@ router.get('/', async ctx => {
         ctx.body = `
 <html>
 <head>
-    <meta charset="UTF-8">
-    <link rel="stylesheet" href="styles.css">
-    <meta http-equiv="X-UA-Compatible">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ticket System</title>
+<meta charset="UTF-8">
+<link rel="stylesheet">
+<meta http-equiv="X-UA-Compatible">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ticket System</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2" crossorigin="anonymous"></script>
 </head>
 <body>
-    <main>
-    Not logged in.
-    <form action="/login" method="post">
-        <input type="text" name="username" placeholder="username">
-        <input type="password" name="password" placeholder="password">
-        <button type="submit" value="Login">Login</button>
-    </form>
+    <main><header class="p-3 bg-dark text-white">
+    <div class="container">
+      <div class="d-flex flex-wrap align-items-center justify-content-center justify-content-lg-start">
+        <a href="/" class="d-flex align-items-center mb-2 mb-lg-0 text-white text-decoration-none">
+          <img class="bi me-2" width="40" height="32" role="img" aria-label="Bootstrap" src="/icon.svg"></img>
+        </a>
+        <ul class="nav col-12 col-lg-auto me-lg-auto mb-2 justify-content-center mb-md-0">
+          <li><a href="/" class="nav-link px-2 text-secondary">Home</a></li>
+          <li><a href="/query-plan" class="nav-link px-2 text-white">Travel Plan</a></li>
+        </ul>
+        <form class="col-12 col-lg-auto mb-3 mb-lg-0 me-lg-3" role="search">
+          <input type="search" class="form-control form-control-dark text-white bg-dark" placeholder="Search..." aria-label="Search">
+        </form>
+        <div class="text-end">
+          <button type="button" class="btn btn-outline-light me-2" id="login">Login</button>
+        </div>
+      </div>
+    </div>
+  </header>
     </main>
+    <script>
+    const loginButton = document.getElementById('login')
+    loginButton.addEventListener('click', () => { location.href = '/login' })
+</script>
 </body>
 </html>`
         return
@@ -100,24 +124,128 @@ router.get('/', async ctx => {
     ctx.body = `
 <html>
 <head>
-    <meta charset="UTF-8">
-    <link rel="stylesheet" href="styles.css">
-    <meta http-equiv="X-UA-Compatible">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ticket System</title>
+<meta charset="UTF-8">
+<link rel="stylesheet">
+<meta http-equiv="X-UA-Compatible">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ticket System</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2" crossorigin="anonymous"></script>
+<style>
+    .login-form {
+        width: 50%;
+    }
+
+    #loginbutton {
+        margin-top: 40px;
+    }
+</style>
 </head>
 <body>
-    <main>
-    logged in as ${ctx.cookies.get('username')}
-    <form action="/buy" method="post">
-        <p><input name="trainID" placeholder="trainID"></p>
-        <p><input name="startStation" placeholder="From where"></p>
-        <p><input name="endStation" placeholder="To where"></p>
-        <p><input name="number" placeholder="seat number"></p>
-        <p><input name="month" placeholder="mm">-<input name="day" placeholder="dd"></p>
-        <p><input type="checkbox" name="queue" checked="checked">Accept waiting until the order is available if there is no enough seats.</p>
-        <button type="submit" value="Buy">Buy</button>
+    <main><header class="p-3 bg-dark text-white">
+    <div class="container">
+      <div class="d-flex flex-wrap align-items-center justify-content-center justify-content-lg-start">
+        <a href="/" class="d-flex align-items-center mb-2 mb-lg-0 text-white text-decoration-none">
+        <img class="bi me-2" width="40" height="32" role="img" aria-label="Bootstrap" src="/icon.svg"></img>
+        </a>
+        <ul class="nav col-12 col-lg-auto me-lg-auto mb-2 justify-content-center mb-md-0">
+          <li><a href="/" class="nav-link px-2 text-white">Home</a></li>
+          <li><a href="/query-plan" class="nav-link px-2 text-white">Travel Plan</a></li>
+          <li><a href="/profile" class="nav-link px-2 text-white">Profile</a></li>
+          <li><a href="/orders" class="nav-link px-2 text-white">Orders</a></li>
+        </ul>
+        <div class="text-end">
+          <button type="button" class="btn btn-outline-light me-2" id="login">Login</button>
+        </div>
+      </div>
+    </div>
+  </header>
+  <div class="login-form position-absolute top-50 start-50 translate-middle">
+  <form action="/buy" method="post">
+        <p><input name="trainID" class="h3 mb-3 fw-normal" placeholder="trainID"></p>
+        <p><input name="startStation" class="h3 mb-3 fw-normal" placeholder="From where"></p>
+        <p><input name="endStation" class="h3 mb-3 fw-normal" placeholder="To where"></p>
+        <p><input name="number" class="h3 mb-3 fw-normal" placeholder="seat number"></p>
+        <p><input name="month" class="h3 mb-3 fw-normal" placeholder="mm">-<input name="day" class="h3 mb-3 fw-normal" placeholder="dd"></p>
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" value="" name="queue" checked="checked">
+            <label class="form-check-label" for="flexCheckChecked">Accept waiting until the order is available if there is no enough seats.</label>
+        </div>
+        
+    <div id="loginbutton">
+      <button type="submit" class="w-100 btn btn-lg btn-primary">Buy</button>
+      </div>
+    </form>
+  </div>
     </main>
+</body>
+</html>
+<html>`
+})
+
+router.get('/login', async ctx => {
+    ctx.body = `
+    <html>
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet">
+<meta http-equiv="X-UA-Compatible">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ticket System</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2" crossorigin="anonymous"></script>
+<style>
+    .login-form {
+        width: 50%;
+    }
+
+    #loginbutton {
+        margin-top: 40px;
+    }
+</style>
+</head>
+<body>
+    <main><header class="p-3 bg-dark text-white">
+    <div class="container">
+      <div class="d-flex flex-wrap align-items-center justify-content-center justify-content-lg-start">
+        <a href="/" class="d-flex align-items-center mb-2 mb-lg-0 text-white text-decoration-none">
+        <img class="bi me-2" width="40" height="32" role="img" aria-label="Bootstrap" src="/icon.svg"></img>
+        </a>
+        <ul class="nav col-12 col-lg-auto me-lg-auto mb-2 justify-content-center mb-md-0">
+          <li><a href="/" class="nav-link px-2 text-secondary">Home</a></li>
+          <li><a href="/query-plan" class="nav-link px-2 text-white">Travel Plan</a></li>
+        </ul>
+        <form class="col-12 col-lg-auto mb-3 mb-lg-0 me-lg-3" role="search">
+          <input type="search" class="form-control form-control-dark text-white bg-dark" placeholder="Search..." aria-label="Search">
+        </form>
+        <div class="text-end">
+          <button type="button" class="btn btn-outline-light me-2" id="login">Login</button>
+        </div>
+      </div>
+    </div>
+  </header>
+  <div class="login-form position-absolute top-50 start-50 translate-middle">
+    <form action="/login" method="post">
+    <div class="mb-3">
+    <label for="username" class="h3 mb-3 fw-normal">Username</label>
+      <input class="form-control" name="username" type="text" placeholder="username" aria-label="default input example">
+    </div class="mb-3">
+    <div>
+    <label for="password" class="h3 mb-3 fw-normal">Password</label>
+      <input type="password" name="password" class="form-control" placeholder="password">
+      </div>
+    <div id="loginbutton">
+      <button type="submit" class="w-100 btn btn-lg btn-primary">Login</button>
+      </div>
+    </form>
+  </div>
+    </main>
+    <script>
+    const loginButton = document.getElementById('login')
+    const signupButton = document.getElementById('signup')
+    loginButton.addEventListener('click', () => { location.href = '/login' })
+    signupButton.addEventListener('click', () => { location.href = '/sign-up'})
+</script>
 </body>
 </html>`
 })
@@ -136,10 +264,12 @@ router.post('/login', async ctx => {
 <html>
 <head>
     <meta charset="UTF-8">
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet">
     <meta http-equiv="X-UA-Compatible">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ticket System</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2" crossorigin="anonymous"></script>
 </head>
 <body>
     <main>
@@ -161,10 +291,12 @@ router.post('/login', async ctx => {
 <html>
 <head>
     <meta charset="UTF-8">
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet">
     <meta http-equiv="X-UA-Compatible">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ticket System</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2" crossorigin="anonymous"></script>
 </head>
 <body>
     <main>
@@ -185,41 +317,82 @@ router.get('/logout', async ctx => {
 router.get('/query-plan', ctx => {
     ctx.body = `
 <html>
-    <head>
-        <meta charset="UTF-8">
-        <link rel="stylesheet" href="styles.css">
-        <meta http-equiv="X-UA-Compatible">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Ticket System</title>
-    </head>
-    <body>
-        <main>
-            <p>Ticket</p>
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet">
+<meta http-equiv="X-UA-Compatible">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ticket System</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2" crossorigin="anonymous"></script>
+<style>
+    .login-form {
+        width: 50%;
+    }
+
+    #loginbutton {
+        margin-top: 40px;
+    }
+</style>
+</head>
+<body>
+    <main><header class="p-3 bg-dark text-white">
+    <div class="container">
+      <div class="d-flex flex-wrap align-items-center justify-content-center justify-content-lg-start">
+        <a href="/" class="d-flex align-items-center mb-2 mb-lg-0 text-white text-decoration-none">
+        <img class="bi me-2" width="40" height="32" role="img" aria-label="Bootstrap" src="/icon.svg"></img>
+        </a>
+        <ul class="nav col-12 col-lg-auto me-lg-auto mb-2 justify-content-center mb-md-0">
+          <li><a href="/" class="nav-link px-2 text-white">Home</a></li>
+          <li><a href="/query-plan" class="nav-link px-2 text-white">Travel Plan</a></li>
+          <li><a href="/profile" class="nav-link px-2 text-white">Profile</a></li>
+          <li><a href="/orders" class="nav-link px-2 text-white">Orders</a></li>
+        </ul>
+        <form class="col-12 col-lg-auto mb-3 mb-lg-0 me-lg-3" role="search">
+          <input type="search" class="form-control form-control-dark text-white bg-dark" placeholder="Search..." aria-label="Search">
+        </form>
+        <div class="text-end">
+          <button type="button" class="btn btn-outline-light me-2" id="login">Login</button>
+        </div>
+      </div>
+    </div>
+  </header>
+  <div class="container">
+  
+    <label for="username" class="h3 mb-3 fw-normal">Ticket</label>
             <form action="/query-ticket" method="post">
-                <p>Destination: <input name="destination"></p>
-                <p>Departure: <input name="departure"></p>
-                <p>Date: <input name="month">-<input name="date"></p>
+                <p>Destination: <input name="destination" class="h3 mb-3 fw-normal"></p>
+                <p>Departure: <input name="departure" class="h3 mb-3 fw-normal"></p>
+                <p>Date: <input name="month" class="h3 mb-3 fw-normal">-<input name="date" class="h3 mb-3 fw-normal"></p>
                 <select name="sort" id="modify">
                     <option value="time">-time by default-</option>
                     <option value="time">time</option>
                     <option value="cost">cost</option>
                 </select>
-                <button type="submit">Search</button>
+    <div id="loginbutton">
+      <button type="submit" class="w-100 btn btn-lg btn-primary">Search</button>
+      </div>
             </form>
-            <p>Transfer</p>
-            <form action="/query-transfer" method="post">
-                <p>Destination: <input name="destination"></p>
-                <p>Departure: <input name="departure"></p>
-                <p>Date: <input name="month">-<input name="date"></p>
+            </div>
+            <div class="container">
+
+    <label for="username" class="h3 mb-3 fw-normal">Transfer</label>
+                <form action="/query-transfer" method="post">
+                <p>Destination: <input name="destination" class="h3 mb-3 fw-normal"></p>
+                <p>Departure: <input name="departure" class="h3 mb-3 fw-normal"></p>
+                <p>Date: <input name="month" class="h3 mb-3 fw-normal">-<input name="date" class="h3 mb-3 fw-normal"></p>
                 <select name="sort" id="modify">
                     <option value="time">-time by default-</option>
                     <option value="time">time</option>
                     <option value="cost">cost</option>
                 </select>
-                <button type="submit">Search</button>
+    <div id="loginbutton">
+      <button type="submit" class="w-100 btn btn-lg btn-primary">Search</button>
+      </div>
             </form>
-        </main>
-    </body>
+            </div>
+    </main>
+</body>
 </html>`
 })
 
@@ -232,10 +405,12 @@ router.post('/query-ticket', async ctx => {
 <html>
     <head>
         <meta charset="UTF-8">
-        <link rel="stylesheet" href="styles.css">
+        <link rel="stylesheet">
         <meta http-equiv="X-UA-Compatible">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Ticket System</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2" crossorigin="anonymous"></script>
     </head>
     <body>
         <main>
@@ -277,10 +452,12 @@ router.post('/query-transfer', async ctx => {
 <html>
     <head>
         <meta charset="UTF-8">
-        <link rel="stylesheet" href="styles.css">
+        <link rel="stylesheet">
         <meta http-equiv="X-UA-Compatible">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Ticket System</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2" crossorigin="anonymous"></script>
     </head>
     <body>
         <main>
@@ -293,10 +470,12 @@ router.post('/query-transfer', async ctx => {
 <html>
     <head>
         <meta charset="UTF-8">
-        <link rel="stylesheet" href="styles.css">
+        <link rel="stylesheet">
         <meta http-equiv="X-UA-Compatible">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Ticket System</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2" crossorigin="anonymous"></script>
     </head>
     <body>
         <main>
@@ -334,10 +513,12 @@ router.get('/unauthorized', async ctx => {
 <html>
     <head>
         <meta charset="UTF-8">
-        <link rel="stylesheet" href="styles.css">
+        <link rel="stylesheet">
         <meta http-equiv="X-UA-Compatible">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Ticket System</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2" crossorigin="anonymous"></script>
     </head>
     <body>
         <main>
@@ -354,12 +535,32 @@ router.get('/profile', async ctx => {
 <html>
     <head>
         <meta charset="UTF-8">
-        <link rel="stylesheet" href="styles.css">
+        <link rel="stylesheet">
         <meta http-equiv="X-UA-Compatible">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Ticket System</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2" crossorigin="anonymous"></script>
     </head>
     <body>
+    <header class="p-3 bg-dark text-white">
+    <div class="container">
+      <div class="d-flex flex-wrap align-items-center justify-content-center justify-content-lg-start">
+        <a href="/" class="d-flex align-items-center mb-2 mb-lg-0 text-white text-decoration-none">
+        <img class="bi me-2" width="40" height="32" role="img" aria-label="Bootstrap" src="/icon.svg"></img>
+        </a>
+        <ul class="nav col-12 col-lg-auto me-lg-auto mb-2 justify-content-center mb-md-0">
+          <li><a href="/" class="nav-link px-2 text-white">Home</a></li>
+          <li><a href="/query-plan" class="nav-link px-2 text-white">Travel Plan</a></li>
+          <li><a href="/profile" class="nav-link px-2 text-white">Profile</a></li>
+          <li><a href="/orders" class="nav-link px-2 text-white">Orders</a></li>
+        </ul>
+        <div class="text-end">
+          <button type="button" class="btn btn-outline-light me-2" id="login">Login</button>
+        </div>
+      </div>
+    </div>
+  </header>
         <main>
         <p>You are not logged in</p>
         </main>
@@ -372,13 +573,33 @@ router.get('/profile', async ctx => {
 <html>
     <head>
         <meta charset="UTF-8">
-        <link rel="stylesheet" href="styles.css">
+        <link rel="stylesheet">
         <meta http-equiv="X-UA-Compatible">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Ticket System</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2" crossorigin="anonymous"></script>
     </head>
     <body>
         <main>
+        <header class="p-3 bg-dark text-white">
+    <div class="container">
+      <div class="d-flex flex-wrap align-items-center justify-content-center justify-content-lg-start">
+        <a href="/" class="d-flex align-items-center mb-2 mb-lg-0 text-white text-decoration-none">
+        <img class="bi me-2" width="40" height="32" role="img" aria-label="Bootstrap" src="/icon.svg"></img>
+        </a>
+        <ul class="nav col-12 col-lg-auto me-lg-auto mb-2 justify-content-center mb-md-0">
+          <li><a href="/" class="nav-link px-2 text-white">Home</a></li>
+          <li><a href="/query-plan" class="nav-link px-2 text-white">Travel Plan</a></li>
+          <li><a href="/profile" class="nav-link px-2 text-white">Profile</a></li>
+          <li><a href="/orders" class="nav-link px-2 text-white">Orders</a></li>
+        </ul>
+        <div class="text-end">
+          <button type="button" class="btn btn-outline-light me-2" id="login">Login</button>
+        </div>
+      </div>
+    </div>
+  </header>
             <form action="/profile" method="post">
                 <p>username: ${username}</p>
                 <p>name: <input name="name" value="${name}"></p>
@@ -401,10 +622,12 @@ router.post('/profile', async ctx => {
 <html>
     <head>
         <meta charset="UTF-8">
-        <link rel="stylesheet" href="styles.css">
+        <link rel="stylesheet">
         <meta http-equiv="X-UA-Compatible">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Ticket System</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2" crossorigin="anonymous"></script>
     </head>
     <body>
         <main>
@@ -426,10 +649,12 @@ router.get('/orders', async ctx => {
 <html>
     <head>
         <meta charset="UTF-8">
-        <link rel="stylesheet" href="styles.css">
+        <link rel="stylesheet">
         <meta http-equiv="X-UA-Compatible">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Ticket System</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2" crossorigin="anonymous"></script>
     </head>
     <body>
         <main>
@@ -445,13 +670,33 @@ router.get('/orders', async ctx => {
 <html>
     <head>
         <meta charset="UTF-8">
-        <link rel="stylesheet" href="styles.css">
+        <link rel="stylesheet">
         <meta http-equiv="X-UA-Compatible">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Ticket System</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2" crossorigin="anonymous"></script>
     </head>
     <body>
-        <main>`
+        <main>
+<header class="p-3 bg-dark text-white">
+    <div class="container">
+      <div class="d-flex flex-wrap align-items-center justify-content-center justify-content-lg-start">
+        <a href="/" class="d-flex align-items-center mb-2 mb-lg-0 text-white text-decoration-none">
+        <img class="bi me-2" width="40" height="32" role="img" aria-label="Bootstrap" src="/icon.svg"></img>
+        </a>
+        <ul class="nav col-12 col-lg-auto me-lg-auto mb-2 justify-content-center mb-md-0">
+          <li><a href="/" class="nav-link px-2 text-white">Home</a></li>
+          <li><a href="/query-plan" class="nav-link px-2 text-white">Travel Plan</a></li>
+          <li><a href="/profile" class="nav-link px-2 text-white">Profile</a></li>
+          <li><a href="/orders" class="nav-link px-2 text-white">Orders</a></li>
+        </ul>
+        <div class="text-end">
+          <button type="button" class="btn btn-outline-light me-2" id="login">Login</button>
+        </div>
+      </div>
+    </div>
+  </header>`
     for (let i = 1; i <= num; ++i) {
         const [ statusRaw, trainID, from, leavingDate, leavingTime, arrow, to, arrivalDate, arrivalTime, price, num ] = (await getline()).split(' ')
         const status = statusRaw.slice(1, -1)
@@ -461,7 +706,7 @@ router.get('/orders', async ctx => {
     <p>${status} ${trainID} ${from} ${leavingDate} ${leavingTime} -> ${to} ${arrivalDate} ${arrivalTime} ￥${price} ${num} seat</p>
     <form action="/refund" method="post">
         <input type="hidden" value="${i}">
-        <button type="submit">Refund</button>
+        <button type="submit" class="btn btn-lg btn-primary">Refund</button>
     </form>
 </div>`
         } else {
@@ -470,7 +715,7 @@ router.get('/orders', async ctx => {
     <p>${status} ${trainID} ${from} ${leavingDate} ${leavingTime} -> ${to} ${arrivalDate} ${arrivalTime} ￥${price} ${num} seats</p>
     <form action="/refund" method="post">
         <input type="hidden" value="${i}">
-        <button type="submit">Refund</button>
+        <button type="submit" class="btn btn-lg btn-primary">Refund</button>
     </form>
 </div>`
         }
@@ -493,13 +738,33 @@ router.post('/refund', async ctx => {
 <html>
     <head>
         <meta charset="UTF-8">
-        <link rel="stylesheet" href="styles.css">
+        <link rel="stylesheet">
         <meta http-equiv="X-UA-Compatible">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Ticket System</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2" crossorigin="anonymous"></script>
     </head>
     <body>
         <main>
+        <header class="p-3 bg-dark text-white">
+    <div class="container">
+      <div class="d-flex flex-wrap align-items-center justify-content-center justify-content-lg-start">
+        <a href="/" class="d-flex align-items-center mb-2 mb-lg-0 text-white text-decoration-none">
+        <img class="bi me-2" width="40" height="32" role="img" aria-label="Bootstrap" src="/icon.svg"></img>
+        </a>
+        <ul class="nav col-12 col-lg-auto me-lg-auto mb-2 justify-content-center mb-md-0">
+          <li><a href="/" class="nav-link px-2 text-white">Home</a></li>
+          <li><a href="/query-plan" class="nav-link px-2 text-white">Travel Plan</a></li>
+          <li><a href="/profile" class="nav-link px-2 text-white">Profile</a></li>
+          <li><a href="/orders" class="nav-link px-2 text-white">Orders</a></li>
+        </ul>
+        <div class="text-end">
+          <button type="button" class="btn btn-outline-light me-2" id="login">Login</button>
+        </div>
+      </div>
+    </div>
+  </header>
         <p>${msg}</p>
         </main>
     </body>
@@ -510,13 +775,33 @@ router.post('/refund', async ctx => {
 <html>
     <head>
         <meta charset="UTF-8">
-        <link rel="stylesheet" href="styles.css">
+        <link rel="stylesheet">
         <meta http-equiv="X-UA-Compatible">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Ticket System</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2" crossorigin="anonymous"></script>
     </head>
     <body>
         <main>
+        <header class="p-3 bg-dark text-white">
+    <div class="container">
+      <div class="d-flex flex-wrap align-items-center justify-content-center justify-content-lg-start">
+        <a href="/" class="d-flex align-items-center mb-2 mb-lg-0 text-white text-decoration-none">
+        <img class="bi me-2" width="40" height="32" role="img" aria-label="Bootstrap" src="/icon.svg"></img>
+        </a>
+        <ul class="nav col-12 col-lg-auto me-lg-auto mb-2 justify-content-center mb-md-0">
+          <li><a href="/" class="nav-link px-2 text-white">Home</a></li>
+          <li><a href="/query-plan" class="nav-link px-2 text-white">Travel Plan</a></li>
+          <li><a href="/profile" class="nav-link px-2 text-white">Profile</a></li>
+          <li><a href="/orders" class="nav-link px-2 text-white">Orders</a></li>
+        </ul>
+        <div class="text-end">
+          <button type="button" class="btn btn-outline-light me-2" id="login">Login</button>
+        </div>
+      </div>
+    </div>
+  </header>
         <p>${msg}</p>
         </main>
     </body>
@@ -528,21 +813,41 @@ router.get('/add-user', async ctx => {
 <html>
     <head>
         <meta charset="UTF-8">
-        <link rel="stylesheet" href="styles.css">
+        <link rel="stylesheet">
         <meta http-equiv="X-UA-Compatible">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Ticket System</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2" crossorigin="anonymous"></script>
     </head>
     <body>
         <main>
+        <header class="p-3 bg-dark text-white">
+    <div class="container">
+      <div class="d-flex flex-wrap align-items-center justify-content-center justify-content-lg-start">
+        <a href="/" class="d-flex align-items-center mb-2 mb-lg-0 text-white text-decoration-none">
+        <img class="bi me-2" width="40" height="32" role="img" aria-label="Bootstrap" src="/icon.svg"></img>
+        </a>
+        <ul class="nav col-12 col-lg-auto me-lg-auto mb-2 justify-content-center mb-md-0">
+          <li><a href="/" class="nav-link px-2 text-white">Home</a></li>
+          <li><a href="/query-plan" class="nav-link px-2 text-white">Travel Plan</a></li>
+          <li><a href="/profile" class="nav-link px-2 text-white">Profile</a></li>
+          <li><a href="/orders" class="nav-link px-2 text-white">Orders</a></li>
+        </ul>
+        <div class="text-end">
+          <button type="button" class="btn btn-outline-light me-2" id="login">Login</button>
+        </div>
+      </div>
+    </div>
+  </header>
             <p>Add User</p>
             <form action="/add-user" method="post">
-                <p>username: <input name="username"></p>
-                <p>name: <input name="name"></p>
-                <p>mail address: <input name="mailAddress"></p>
-                <p>privilege: <input name="privilege"></p>
-                <p>password: <input name="password" type="password"></p>
-                <button type="submit">Add</button>
+                <p>username: <input name="username" class="h3 mb-3 fw-normal"></p>
+                <p>name: <input name="name"  class="h3 mb-3 fw-normal"></p>
+                <p>mail address: <input name="mailAddress" class="h3 mb-3 fw-normal"></p>
+                <p>privilege: <input name="privilege" class="h3 mb-3 fw-normal"></p>
+                <p>password: <input name="password" type="password" class="h3 mb-3 fw-normal"></p>
+                <button type="submit" class="btn btn-outline-light me-2">Add</button>
         </main>
     </body>
 </html>`
@@ -553,15 +858,17 @@ router.post('/add-user', async ctx => {
         ctx.redirect('/unauthorized')
     }
     putline(`[${timeStamp}] add_user -c ${ctx.request.body.username} -u ${ctx.request.body.username} -n ${ctx.request.body.name} -e ${ctx.request.body.email} -p ${ctx.request.body.privilege} -p ${ctx.request.body.password}`)
-    const msg = dismissTimeStamp(await getline)
+    const msg = dismissTimeStamp(await getline())
     ctx.body = `
 <html>
     <head>
         <meta charset="UTF-8">
-        <link rel="stylesheet" href="styles.css">
+        <link rel="stylesheet">
         <meta http-equiv="X-UA-Compatible">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Ticket System</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2" crossorigin="anonymous"></script>
     </head>
     <body>
         <main>
@@ -576,10 +883,12 @@ router.get('/modify', async ctx => {
 <html>
     <head>
         <meta charset="UTF-8">
-        <link rel="stylesheet" href="styles.css">
+        <link rel="stylesheet">
         <meta http-equiv="X-UA-Compatible">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Ticket System</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2" crossorigin="anonymous"></script>
     </head>
     <body>
         <main>
@@ -607,10 +916,12 @@ router.post('/modify', async ctx => {
 <html>
     <head>
         <meta charset="UTF-8">
-        <link rel="stylesheet" href="styles.css">
+        <link rel="stylesheet">
         <meta http-equiv="X-UA-Compatible">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Ticket System</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2" crossorigin="anonymous"></script>
     </head>
     <body>
         <main>
@@ -629,10 +940,12 @@ router.post('/modify', async ctx => {
 <html>
     <head>
         <meta charset="UTF-8">
-        <link rel="stylesheet" href="styles.css">
+        <link rel="stylesheet">
         <meta http-equiv="X-UA-Compatible">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Ticket System</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2" crossorigin="anonymous"></script>
     </head>
     <body>
         <main>
@@ -651,10 +964,12 @@ router.post('/modify', async ctx => {
 <html>
     <head>
         <meta charset="UTF-8">
-        <link rel="stylesheet" href="styles.css">
+        <link rel="stylesheet">
         <meta http-equiv="X-UA-Compatible">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Ticket System</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2" crossorigin="anonymous"></script>
     </head>
     <body>
         <main>
@@ -673,10 +988,12 @@ router.post('/modify', async ctx => {
 <html>
     <head>
         <meta charset="UTF-8">
-        <link rel="stylesheet" href="styles.css">
+        <link rel="stylesheet">
         <meta http-equiv="X-UA-Compatible">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Ticket System</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2" crossorigin="anonymous"></script>
     </head>
     <body>
         <main>
@@ -691,10 +1008,12 @@ router.post('/modify', async ctx => {
 <html>
     <head>
         <meta charset="UTF-8">
-        <link rel="stylesheet" href="styles.css">
+        <link rel="stylesheet">
         <meta http-equiv="X-UA-Compatible">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Ticket System</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2" crossorigin="anonymous"></script>
     </head>
     <body>
         <main>
@@ -710,10 +1029,12 @@ router.get('/add-train', async ctx => {
 <html>
     <head>
         <meta charset="UTF-8">
-        <link rel="stylesheet" href="styles.css">
+        <link rel="stylesheet">
         <meta http-equiv="X-UA-Compatible">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Ticket System</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2" crossorigin="anonymous"></script>
     </head>
     <body>
         <main>
@@ -741,10 +1062,12 @@ router.post('/query-train', async ctx => {
             <html>
             <head>
                 <meta charset="UTF-8">
-                <link rel="stylesheet" href="styles.css">
+                <link rel="stylesheet">
                 <meta http-equiv="X-UA-Compatible">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <title>Ticket System</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2" crossorigin="anonymous"></script>
             </head>
             <body>
                 <main>
@@ -759,10 +1082,12 @@ router.post('/query-train', async ctx => {
         <html>
         <head>
             <meta charset="UTF-8">
-            <link rel="stylesheet" href="styles.css">
+            <link rel="stylesheet">
             <meta http-equiv="X-UA-Compatible">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>Ticket System</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2" crossorigin="anonymous"></script>
         </head>
         <body>
             <main>
@@ -805,20 +1130,50 @@ router.post('/buy', async ctx => {
 
     ctx.body = `
 <html>
-    <head>
-        <meta charset="UTF-8">
-        <link rel="stylesheet" href="styles.css">
-        <meta http-equiv="X-UA-Compatible">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Ticket System</title>
-    </head>
-    <body>
-        <main>
-        <p>${msg}</p>
-        <p><a href="/">back to homepage</a></p>
-        </main>
-    </body>
-</html>`
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet">
+<meta http-equiv="X-UA-Compatible">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ticket System</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2" crossorigin="anonymous"></script>
+<style>
+    .login-form {
+        width: 50%;
+    }
+
+    #loginbutton {
+        margin-top: 40px;
+    }
+</style>
+</head>
+<body>
+    <main><header class="p-3 bg-dark text-white">
+    <div class="container">
+      <div class="d-flex flex-wrap align-items-center justify-content-center justify-content-lg-start">
+        <a href="/" class="d-flex align-items-center mb-2 mb-lg-0 text-white text-decoration-none">
+        <img class="bi me-2" width="40" height="32" role="img" aria-label="Bootstrap" src="/icon.svg"></img>
+        </a>
+        <ul class="nav col-12 col-lg-auto me-lg-auto mb-2 justify-content-center mb-md-0">
+          <li><a href="/" class="nav-link px-2 text-white">Home</a></li>
+          <li><a href="/query-plan" class="nav-link px-2 text-white">Travel Plan</a></li>
+          <li><a href="/profile" class="nav-link px-2 text-white">Profile</a></li>
+          <li><a href="/orders" class="nav-link px-2 text-white">Orders</a></li>
+        </ul>
+        <div class="text-end">
+        ${ctx.cookies.get('username')}
+        </div>
+      </div>
+    </div>
+  </header>
+    <div class="container">
+    <p>${msg}</p>
+    </div>
+    </main>
+</body>
+</html>
+<html>`
 return
 })
 
